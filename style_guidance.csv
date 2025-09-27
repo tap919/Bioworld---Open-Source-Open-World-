@@ -1,0 +1,9 @@
+preset_id,style_short,admire_refs,audit_targets
+Cloth_HipHop_Street_A,hip-hop streetwear,Destiny2 ornaments; Watch Dogs 2 NPC fits,verts<=60k;bones<=128;particle_dist=12;Rough~0.5
+Cloth_Manga_TechNinja_A,manga tech-ninja,Ghostrunner; Metal Gear Rising,verts<=60k;Emissive<=1.0;Rough~0.35
+Cloth_Future_Labwear_A,futuristic lab,Deus Ex MD; Control lab scenes,verts<=60k;clean seams;Bloom<=safe
+Vehicles_OldSchool_A,80s/90s muscle+sedan,GTA V traffic; Driver:SF,tri<=1.2M;draw_calls<=400;shader_simple
+Vehicles_CyberMilitant_A,cybertruck/APC,CP2077 trucks; Halo APC vibe,tri<=1.6M;draw_calls<=500;mat_matte
+Env_FuturisticLab_A,futuristic lab block,Control; Portal aesthetic,tri<=8M;nav>=40%;door_freq<=0.25
+Env_Metropolis_HD_A,dense metropolis,Watch Dogs Legion side streets,tri<=12M;draw_calls<=2200;RVT blend on
+Env_Mountain_SpookyNight_A,spooky mountains at night,RE Village forest; Alan Wake II,tri<=6M;fog_gpu<1.2ms;wildlife<=2% density

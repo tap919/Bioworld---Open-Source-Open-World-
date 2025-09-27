@@ -1,0 +1,29 @@
+{
+  "preset_id": "Cloth_Future_Labwear_A",
+  "seed": 44013,
+  "marvelous": {
+    "template": "LabSuit.zprj",
+    "sizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "particle_distance": 12
+  },
+  "materials": {
+    "master": "M_Cloth_Master",
+    "params": {
+      "FabricType": 2,
+      "Roughness": 0.4,
+      "NormalStrength": 0.7,
+      "Emissive": 0.2
+    }
+  },
+  "substance": {
+    "graph": "Materials/Fabric_Labcoat.sbsar",
+    "res": 2048,
+    "params": {
+      "fabric_microfiber": 0.7
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "preset_id": "Foliage_Wetlands_A",
+  "seed": 77211,
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": false
+  },
+  "speedtree": {
+    "template": "WetlandWillow.sta",
+    "count": 18
+  },
+  "pcg": {
+    "graph": "/PCG/Foliage_Volume",
+    "density": 0.22,
+    "slope_mask": [
+      0,
+      12
+    ],
+    "height_mask": [
+      0,
+      300
+    ]
+  },
+  "materials": {
+    "master": "M_Foliage_Master",
+    "params": {
+      "Subsurface": 0.4,
+      "WindIntensity": 0.6
+    }
+  }
+}

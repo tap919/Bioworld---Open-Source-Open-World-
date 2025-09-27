@@ -1,0 +1,20 @@
+{
+  "preset_id": "Cloth_LabCoats_A",
+  "seed": 90214,
+  "marvelous": {
+    "template": "LabCoat.zprj",
+    "sizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "particle_distance": 12
+  },
+  "materials": {
+    "master": "M_Cloth_Master",
+    "params": {
+      "FabricType": 2,
+      "Roughness": 0.55
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "preset_id": "Vehicles_CyberMilitant_A",
+  "seed": 55102,
+  "budgets": {
+    "tri_max": 1600000,
+    "draw_calls_max": 500,
+    "tex_pool_mb": 320
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Vehicle_CyberTruck_01",
+      "density": 0.03,
+      "align_to_normal": false
+    },
+    {
+      "mesh": "SM_Vehicle_APC_Future_01",
+      "density": 0.02,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_CarPaint_Matte",
+    "params": {
+      "Flake": 0.0,
+      "ClearCoat": 0.05,
+      "Roughness": 0.8
+    }
+  },
+  "niagara": {
+    "spawn_rate": 0,
+    "burst": 0,
+    "gravity": -980,
+    "drag": 2.5
+  }
+}

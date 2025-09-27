@@ -1,0 +1,31 @@
+{
+  "preset_id": "Cloth_Manga_TechNinja_A",
+  "seed": 44012,
+  "marvelous": {
+    "template": "TechNinja.zprj",
+    "sizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "particle_distance": 10
+  },
+  "materials": {
+    "master": "M_Cloth_Master",
+    "params": {
+      "FabricType": 3,
+      "Roughness": 0.35,
+      "NormalStrength": 1.2,
+      "Emissive": 0.6
+    }
+  },
+  "substance": {
+    "graph": "Materials/Fabric_Techweave.sbsar",
+    "res": 2048,
+    "params": {
+      "weave_scale": 0.75,
+      "edge_glow": 0.25,
+      "color_hue": -0.15
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "pace": 3,
+  "difficulty": 4,
+  "tone": 3,
+  "artStyle": 5,
+  "combat": 4,
+  "exploreVsCraft": 4,
+  "soloVsCoop": 4,
+  "modSupport": 5,
+  "camera": "third+first-toggle",
+  "coopPriority": "prototype"
+}

@@ -1,0 +1,24 @@
+{
+  "preset_id": "VFX_Phenomena_A",
+  "seed": 11891,
+  "vfx": {
+    "embergen": "Phenomena_A.eepr",
+    "variants": [
+      "idle",
+      "burst"
+    ],
+    "niagara": {
+      "spawn_rate": 60,
+      "burst": 12,
+      "gravity": -600,
+      "drag": 1.8
+    }
+  },
+  "materials": {
+    "master": "M_FX_Sprite",
+    "params": {
+      "Distortion": 0.2,
+      "Glow": 1.3
+    }
+  }
+}

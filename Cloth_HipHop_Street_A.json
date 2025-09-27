@@ -1,0 +1,32 @@
+{
+  "preset_id": "Cloth_HipHop_Street_A",
+  "seed": 44011,
+  "marvelous": {
+    "template": "HoodieCargo.zprj",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "particle_distance": 12
+  },
+  "materials": {
+    "master": "M_Cloth_Master",
+    "params": {
+      "FabricType": 1,
+      "Roughness": 0.52,
+      "NormalStrength": 0.9,
+      "Metallic": 0.0
+    }
+  },
+  "substance": {
+    "graph": "Materials/Fabric_Streetwear.sbsar",
+    "res": 2048,
+    "params": {
+      "stitch_intensity": 0.6,
+      "grime_edge": 0.2,
+      "color_hue": -0.05
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "preset_id": "Env_Metropolis_HD_A",
+  "seed": 66102,
+  "budgets": {
+    "tri_max": 12000000,
+    "draw_calls_max": 2200,
+    "tex_pool_mb": 1600
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/CityBlock.hda",
+    "parms": {
+      "plots": 12,
+      "road_width_m": 8.0,
+      "alley_prob": 0.25,
+      "prop_density": 0.45
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/CityProps",
+    "density": 0.4,
+    "slope_mask": [
+      0,
+      10
+    ],
+    "height_mask": [
+      0,
+      1500
+    ]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Streetlight_01",
+      "density": 0.12,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Bench_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_NewspaperBox_01",
+      "density": 0.05,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_City_Master",
+    "params": {
+      "Wetness": 0.2,
+      "DecalBlend": 0.6
+    }
+  }
+}

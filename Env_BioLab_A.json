@@ -1,0 +1,61 @@
+{
+  "preset_id": "Env_BioLab_A",
+  "seed": 341992,
+  "budgets": {
+    "tri_max": 8000000,
+    "draw_calls_max": 1600,
+    "tex_pool_mb": 1200
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/LabBlock.hda",
+    "parms": {
+      "plots": 6,
+      "road_width_m": 6.0,
+      "room_rate": 0.3
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/Content_Volume",
+    "density": 0.35,
+    "slope_mask": [
+      0,
+      25
+    ],
+    "height_mask": [
+      0,
+      1200
+    ]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Lab_Tray_01",
+      "density": 0.4,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Crate_Bio_01",
+      "density": 0.12,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_Lab_Master",
+    "params": {
+      "HueShift": -0.08,
+      "Roughness": 0.6,
+      "Emissive": 0.9
+    }
+  },
+  "substance": {
+    "graph": "Materials/LabMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "grunge": 0.2
+    }
+  }
+}

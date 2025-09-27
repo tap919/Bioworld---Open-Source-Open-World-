@@ -1,0 +1,55 @@
+{
+  "preset_id": "Env_FuturisticLab_A",
+  "seed": 66101,
+  "budgets": {
+    "tri_max": 8000000,
+    "draw_calls_max": 1600,
+    "tex_pool_mb": 1200
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/LabBlock.hda",
+    "parms": {
+      "plots": 5,
+      "room_rate": 0.35,
+      "door_freq": 0.22,
+      "chokepoint_rate": 0.08
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/LabProps",
+    "density": 0.35,
+    "slope_mask": [
+      0,
+      25
+    ],
+    "height_mask": [
+      0,
+      1200
+    ]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Lab_Terminal_01",
+      "density": 0.08,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Lab_Tank_01",
+      "density": 0.04,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Lab_Master",
+    "params": {
+      "HueShift": -0.1,
+      "Roughness": 0.55,
+      "Emissive": 1.1
+    }
+  }
+}

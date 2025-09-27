@@ -1,0 +1,44 @@
+{
+  "profile_id": "Bioworld_Style_Profile_UserA",
+  "pillars": [
+    "hip-hop+manga+futuristic clothing",
+    "old-school or cyber-militant vehicles",
+    "futuristic labs",
+    "high-detail metropolis",
+    "spooky mountainous nights"
+  ],
+  "visual_palette": {
+    "hue_bias": -0.05,
+    "contrast": "medium-high",
+    "grime_level": 0.25,
+    "neon_accents": 0.2
+  },
+  "world_feel": {
+    "density": "high",
+    "noise": "low",
+    "lighting": "lumen_cool"
+  },
+  "level_targets": {
+    "nav_area_min": 0.4,
+    "loop_paths_min": 1,
+    "exits_min": 2
+  },
+  "clothing_refs": [
+    "streetwear tech",
+    "tech-ninja manga",
+    "clinical labwear"
+  ],
+  "vehicle_refs": [
+    "80s/90s muscle+sedan",
+    "cybertruck/APC"
+  ],
+  "lab_refs": [
+    "sterile, emissive accents, glass+metal"
+  ],
+  "city_refs": [
+    "dense props, wet decals, neon pockets"
+  ],
+  "mountain_refs": [
+    "fog bands, conifers, cliff silhouettes, wildlife calls"
+  ]
+}

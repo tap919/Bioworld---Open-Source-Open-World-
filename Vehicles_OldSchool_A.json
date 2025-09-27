@@ -1,0 +1,36 @@
+{
+  "preset_id": "Vehicles_OldSchool_A",
+  "seed": 55101,
+  "budgets": {
+    "tri_max": 1200000,
+    "draw_calls_max": 400,
+    "tex_pool_mb": 256
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Vehicle_Muscle_01",
+      "density": 0.04,
+      "align_to_normal": false
+    },
+    {
+      "mesh": "SM_Vehicle_Sedan80s_01",
+      "density": 0.06,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_CarPaint_Old",
+    "params": {
+      "Flake": 0.1,
+      "ClearCoat": 0.2,
+      "Aging": 0.35
+    }
+  },
+  "houdini": {
+    "hda": "HDAs/Roads.hda",
+    "parms": {
+      "lanes": 2,
+      "alley_prob": 0.3
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "preset_id": "Env_Mountain_SpookyNight_A",
+  "seed": 77101,
+  "budgets": {
+    "tri_max": 6000000,
+    "draw_calls_max": 1400,
+    "tex_pool_mb": 1000
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "speedtree": {
+    "template": "Conifer_Pine.sta",
+    "count": 24
+  },
+  "pcg": {
+    "graph": "/PCG/MountainProps",
+    "density": 0.28,
+    "slope_mask": [
+      0,
+      45
+    ],
+    "height_mask": [
+      500,
+      2500
+    ]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Rock_Cliff_01",
+      "density": 0.3,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Log_01",
+      "density": 0.12,
+      "align_to_normal": true
+    }
+  ],
+  "vfx": {
+    "embergen": "Fog_Low.eepr",
+    "variants": [
+      "idle"
+    ],
+    "niagara": {
+      "spawn_rate": 40,
+      "burst": 0,
+      "gravity": -200,
+      "drag": 1.2
+    }
+  },
+  "spawns": [
+    {
+      "actor": "BP_Wolf",
+      "density": 0.01
+    },
+    {
+      "actor": "BP_Owl",
+      "density": 0.008
+    }
+  ],
+  "materials": {
+    "master": "M_Mountain_Master",
+    "params": {
+      "MoonLightBleach": 0.35,
+      "ShadowBoost": -0.2,
+      "FogTint": 0.15
+    }
+  }
+}

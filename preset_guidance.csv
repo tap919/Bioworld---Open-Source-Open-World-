@@ -1,0 +1,6 @@
+preset_id,description,aesthetic_refs,target_games,target_quality_notes,metrics_targets,priority_rank
+Env_BioLab_A,Dense biotech lab floor; cool palette; medium clutter.,"clean_brutalism,laboratory,neo-noir",Deus Ex:Mankind Divided; Control,PBR accuracy; crisp normals; low noise; believable grime at edges.,tri<=8e6;draw_calls<=1600;tex_pool<=1200MB;nav_area>=40%,1
+Foliage_Wetlands_A,Wetlands planters and rooftops; wind-reactive foliage.,"wetlands,biotech-greenhouse",The Last of Us Part II; Ghost of Tsushima,Thin-leaf SSS; controlled wind; no overdraw spikes.,tri<=3e6;draw_calls<=900;tex_pool<=800MB,2
+Cloth_LabCoats_A,Three lab-coat sizes; minimal wrinkle; clean seams.,"clinical,sterile",Hitman; Detroit: Become Human,Proper fabric roughness; collar stability; no cloth jitter.,bones<=128;verts<=60k per outfit,3
+VFX_Phenomena_A,Player-mastery aura; idle and burst variants.,"bioluminescence,ionized-gas",Destiny 2; Control,Readable silhouettes; HDR-safe glow; no full-screen bloom.,flipbook<=256x256x32;gpu_ms<1.0,4
+Streets_Min_A,Minimal streets; 2 lanes; sparse alleys; optimized for demo.,"near-future,clean-urban",Watch Dogs Legion; Cyberpunk 2077 (side streets),Tight texel density; RVT blend; curb/road decals for realism.,tri<=3e6;draw_calls<=800;tex_pool<=600MB,5
