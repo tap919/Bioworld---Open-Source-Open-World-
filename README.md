@@ -59,10 +59,25 @@ See [docs/API.md](docs/API.md) for full documentation.
 
 ## Documentation
 
+- [**Build Guide**](docs/BUILD_GUIDE.md) - Unreal Engine implementation guide with checklists
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [API Documentation](docs/API.md)
 - [Research Companion Spec](Bioworld_Research_Companion_Spec_v1.md)
 - [Ultimate Playbook](Bioworld_Ultimate_Playbook_v1.md)
+
+## Unreal Engine Build Overview
+
+The game is built using Unreal Engine 5.x with the following key systems:
+
+| System | UE5 Feature | Purpose |
+|--------|-------------|---------|
+| Protein Folding | C++ Components + Data Tables | AI-driven structure prediction |
+| Corporations | Component Hierarchy | Player organization holarchy |
+| World Generation | PCG Framework + Nanite | Vast procedural landscapes |
+| Economy | Replicated Actors | Multiplayer market sync |
+| Visuals | Lumen + Niagara | Dynamic lighting and effects |
+
+See [docs/BUILD_GUIDE.md](docs/BUILD_GUIDE.md) for detailed implementation instructions and build checklists.
 
 ## License
 
