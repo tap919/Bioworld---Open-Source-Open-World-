@@ -1,6 +1,9 @@
 /**
  * Bioworld Website - Research Page JavaScript
  * Handles protein folding, design, research packets, simulation adapters, and AI analysis
+ * 
+ * Dependencies: main.js (provides showToast, formatDate utility functions)
+ * Note: This file must be loaded after main.js in HTML templates
  */
 
 document.addEventListener('DOMContentLoaded', function() {

@@ -933,4 +933,6 @@ if __name__ == '__main__':
         init_db()
     
     # Run development server
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Debug mode controlled by environment variable (default: False for security)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
