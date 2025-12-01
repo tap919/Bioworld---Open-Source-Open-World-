@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bioworld - Open source MMORPG for biotechnology discovery and curing disease">
+    <title>Bioworld - Open Source MMORPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/">Bioworld</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/research">Research</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Bioworld</h1>
+                <p class="hero-tagline">The MMORPG where biotechnology meets economic strategy. Learn, Do, Teach.</p>
+                <p class="hero-description">
+                    Solve protein folding challenges, design novel therapeutics, build corporations, 
+                    and monetize your scientific discoveries. Real science, real impact.
+                </p>
+                <div class="hero-actions">
+                    <a href="/research" class="btn btn-primary">Start Research</a>
+                    <a href="/about" class="btn btn-secondary">Learn More</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2>Phase 1: Biotechnology Loop</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🧬 Protein Folding</h3>
+                    <p>Use AI models inspired by AlphaFold to predict complex 3D protein structures from amino acid sequences.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔬 Generative Design</h3>
+                    <p>Design completely new proteins using RF Diffusion-like AI: synthetic antibodies, plastic-eating enzymes, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🧪 Wet Lab Validation</h3>
+                    <p>Validate AI predictions with simulated laboratory experiments. Even the best models require real-world testing.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📊 Multi-Omics Data</h3>
+                    <p>Integrate genomics, proteomics, and clinical data for personalized medicine research.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2>Phase 2: Corporation & Economy</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🏢 Player Corporations</h3>
+                    <p>Build your biotech empire. Research teams, manufacturing facilities, and financial systems working together.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📡 API Marketplace</h3>
+                    <p>Expose your models as APIs. Charge other players for drug efficacy predictions, genetic marker analysis, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📚 Teaching Platform</h3>
+                    <p>Create courses and guides. Monetize your expertise through the "learn, do, teach" model.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📈 Market Trading</h3>
+                    <p>Trade proteins, patents, and research assets. Use reinforcement learning for market prediction strategies.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tech-stack">
+            <h2>Technology</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <strong>Game Engine</strong>
+                    <span>Unreal Engine 5.x with Lumen, Nanite, PCG</span>
+                </div>
+                <div class="tech-item">
+                    <strong>Backend</strong>
+                    <span>Python Flask API with SQLite (Distributed Ready)</span>
+                </div>
+                <div class="tech-item">
+                    <strong>AI Models</strong>
+                    <span>AlphaFold-inspired prediction, RF Diffusion design</span>
+                </div>
+                <div class="tech-item">
+                    <strong>Economics</strong>
+                    <span>Game Theory, RL Trading, API Marketplace</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="api-status">
+            <h2>API Status</h2>
+            <div id="api-health" class="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Bioworld. Open source under MIT/Apache-2.0 license.</p>
+            <p>Learn the thing. Do the thing. Teach the thing. Cure disease together.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

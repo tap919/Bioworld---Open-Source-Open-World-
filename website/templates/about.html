@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="About Bioworld - Open source MMORPG for biotechnology and scientific discovery">
+    <title>About - Bioworld MMORPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/">Bioworld</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/research">Research</a></li>
+                <li><a href="/about" class="active">About</a></li>
+                <li><a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="page-header">
+            <h1>About Bioworld</h1>
+            <p>An MMORPG where biotechnology meets economic strategy. Learn, Do, Teach.</p>
+        </section>
+
+        <section class="about-content">
+            <h2>Vision</h2>
+            <p>
+                Bioworld is a highly dynamic, collaborative, and competitive MMORPG where scientific discovery 
+                is directly linked to massive economic and infrastructural development. Powered by AI and 
+                distributed systems technology, players solve real biotechnology challenges while building 
+                corporations and monetizing their discoveries.
+            </p>
+
+            <h2>The Core Model: Learn, Do, Teach</h2>
+            <p>
+                The game follows a proven pattern that allows players to monetize their scientific insights 
+                into scalable offerings:
+            </p>
+            <ul class="pillars-list">
+                <li><strong>Learn</strong> - Master AI tools, understand protein structures, study genomics</li>
+                <li><strong>Do</strong> - Predict protein folds, design therapeutics, run simulations</li>
+                <li><strong>Teach</strong> - Create courses, expose APIs, build educational content</li>
+            </ul>
+
+            <h2>Phase 1: Biotechnology Loop</h2>
+            <p>
+                The initial gameplay centers around foundational biotechnology challenges using real scientific data:
+            </p>
+            <ul>
+                <li><strong>Protein Folding</strong> - Use AlphaFold-inspired AI to predict 3D structures from amino acid sequences</li>
+                <li><strong>Generative Design</strong> - Create novel proteins using RF Diffusion-like techniques for antibodies, enzymes, and structural proteins</li>
+                <li><strong>Wet Lab Validation</strong> - Validate AI predictions with simulated laboratory experiments</li>
+                <li><strong>Multi-Omics Data</strong> - Integrate genomics, proteomics, and clinical data for personalized medicine</li>
+            </ul>
+
+            <h2>Phase 2: Corporation & Economy</h2>
+            <p>
+                The "Grand Theft" style emerges through strategic deployment and monetization of discoveries:
+            </p>
+            <ul>
+                <li><strong>Player Corporations</strong> - Build biotech empires with research teams, manufacturing, and financial systems</li>
+                <li><strong>API Marketplace</strong> - Expose your models as APIs. Charge for drug efficacy predictions and genetic analysis</li>
+                <li><strong>Teaching Platform</strong> - Create courses and guides. Monetize expertise through educational offers</li>
+                <li><strong>Market Trading</strong> - Trade proteins, patents, and assets using reinforcement learning strategies</li>
+            </ul>
+
+            <h2>Architecture: Distributed MMORPG</h2>
+            <div class="architecture-diagram">
+                <div class="arch-layer">
+                    <h3>Frontend</h3>
+                    <p>HTML5, CSS3, JavaScript</p>
+                </div>
+                <div class="arch-arrow">↓</div>
+                <div class="arch-layer">
+                    <h3>API Layer</h3>
+                    <p>Flask REST API + Player APIs</p>
+                </div>
+                <div class="arch-arrow">↓</div>
+                <div class="arch-layer">
+                    <h3>Game Logic</h3>
+                    <p>AI Models, Market Engine, Corporation System</p>
+                </div>
+                <div class="arch-arrow">↓</div>
+                <div class="arch-layer">
+                    <h3>Distributed Backend</h3>
+                    <p>SQLite (Dev) → Distributed DB (Prod)</p>
+                </div>
+                <div class="arch-arrow">↓</div>
+                <div class="arch-layer">
+                    <h3>Game Engine</h3>
+                    <p>Unreal Engine 5.x (Lumen, Nanite, PCG)</p>
+                </div>
+            </div>
+
+            <h2>Distributed System Design</h2>
+            <p>
+                The entire MMORPG functions as a distributed system where components collaborate, 
+                communicate, and compete by sending messages over a network:
+            </p>
+            <ul>
+                <li><strong>Scalability</strong> - Partitioning divides workload across nodes, thinking globally while acting locally</li>
+                <li><strong>Reliability</strong> - Replication ensures data availability in presence of failures</li>
+                <li><strong>Consensus</strong> - Distributed consensus for coordinated state management across the game world</li>
+                <li><strong>Holarchy</strong> - Systems composed of subsystems, from atomic labs to major corporations</li>
+            </ul>
+
+            <h2>AI Applications in Curing Disease</h2>
+            <p>
+                The game leverages transformative applications of AI in medicine and biology:
+            </p>
+            <ul>
+                <li><strong>AlphaFold-inspired Prediction</strong> - Determine protein structures from sequences</li>
+                <li><strong>Drug Discovery</strong> - AI-accelerated identification of drug candidates</li>
+                <li><strong>Personalized Medicine</strong> - Model interactions between proteins, DNA, RNA, and drug molecules</li>
+                <li><strong>Misfolding Analysis</strong> - Understand how genetic mutations cause protein misfolding</li>
+                <li><strong>NLP for Research</strong> - Extract insights from medical records and research publications</li>
+            </ul>
+
+            <h2>Economic Systems</h2>
+            <ul>
+                <li><strong>Reinforcement Learning</strong> - Develop algorithms for market prediction strategies</li>
+                <li><strong>Game Theory</strong> - Strategic decision-making for resource allocation and competition</li>
+                <li><strong>Auctions & Market Design</strong> - Trade discoveries, patents, and research assets</li>
+                <li><strong>Ethical Considerations</strong> - Navigate patents, bias, fairness, and transparency</li>
+            </ul>
+
+            <h2>Success Metrics</h2>
+            <ul>
+                <li>Day-7 retention ≥40%</li>
+                <li>Average 3+ "surprise interactions" per session</li>
+                <li>&lt;16 ms 90th-percentile hitch in slice</li>
+                <li>Teach first craft in &lt;7 min</li>
+                <li>50+ research packets merged in first month</li>
+            </ul>
+
+            <h2>Open Source</h2>
+            <p>
+                Bioworld is developed openly under MIT/Apache-2.0 license. Community contributions 
+                are welcome for code, content, and research packets. The game functions as a constantly 
+                evolving holarchy where emergent behavior arises from simple components following simple rules.
+            </p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Bioworld. Open source under MIT/Apache-2.0 license.</p>
+            <p>
+                View our <a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-">public roadmap</a> 
+                and contribute to the project.
+            </p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
