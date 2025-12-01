@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bioworld Research - Protein folding, AI analysis, and scientific discovery">
+    <title>Research - Bioworld MMORPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/">Bioworld</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/research" class="active">Research</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="page-header">
+            <h1>Research Lab</h1>
+            <p>Protein folding, generative design, wet lab validation, and AI-powered analysis.</p>
+        </section>
+
+        <section class="protein-folding">
+            <h2>🧬 Protein Folding Challenge</h2>
+            <p>Submit an amino acid sequence to predict its 3D structure using AlphaFold-inspired AI.</p>
+            <div class="protein-form">
+                <input type="text" id="protein-name" placeholder="Protein name (e.g., MyProtein-001)" />
+                <textarea id="amino-sequence" placeholder="Enter amino acid sequence (e.g., MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSH)" rows="3"></textarea>
+                <input type="text" id="player-id" placeholder="Your Player ID" />
+                <button id="predict-structure" class="btn btn-primary">Predict Structure</button>
+            </div>
+            <div id="protein-result" class="result-container hidden"></div>
+        </section>
+
+        <section class="protein-design">
+            <h2>🔬 Generative Protein Design</h2>
+            <p>Design new proteins from scratch using RF Diffusion-like AI for specific therapeutic purposes.</p>
+            <div class="design-form">
+                <select id="design-purpose">
+                    <option value="">Select design purpose...</option>
+                    <option value="antibody targeting cancer">Antibody - Cancer Targeting</option>
+                    <option value="enzyme plastic degradation">Enzyme - Plastic Degradation</option>
+                    <option value="enzyme methane fixation">Enzyme - Methane Fixation</option>
+                    <option value="structural scaffold">Structural - Biomaterial Scaffold</option>
+                    <option value="antibody viral neutralization">Antibody - Viral Neutralization</option>
+                </select>
+                <input type="number" id="design-length" placeholder="Sequence length (100-500)" min="50" max="500" value="200" />
+                <button id="design-protein" class="btn btn-primary">Design Protein</button>
+            </div>
+            <div id="design-result" class="result-container hidden"></div>
+        </section>
+
+        <section class="research-workflows">
+            <h2>Research Workflows</h2>
+            <div class="workflow-grid">
+                <div class="workflow-card">
+                    <h3>📥 Import</h3>
+                    <p>Drop files → auto OCR (for PDFs) → store text + attachments in local SQLite vault.</p>
+                </div>
+                <div class="workflow-card">
+                    <h3>📝 Annotate</h3>
+                    <p>Highlight, comment, tag by topic and world seed.</p>
+                </div>
+                <div class="workflow-card">
+                    <h3>✅ Validate</h3>
+                    <p>Choose a rule set → run checks (dimension/unit sanity, value ranges).</p>
+                </div>
+                <div class="workflow-card">
+                    <h3>🔬 Simulate</h3>
+                    <p>Pick a Sim Adapter (Python script) → run with parameters → capture outputs.</p>
+                </div>
+                <div class="workflow-card">
+                    <h3>📊 Compare</h3>
+                    <p>Overlay sim results vs reference curves or tables → produce one-page summary.</p>
+                </div>
+                <div class="workflow-card">
+                    <h3>📦 Package</h3>
+                    <p>Generate a signed Research Packet (.brc.zip) with manifest.json, checksums, and license.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="research-packets">
+            <h2>Research Packets</h2>
+            <div class="packet-controls">
+                <button id="refresh-packets" class="btn btn-secondary">Refresh</button>
+                <button id="create-packet" class="btn btn-primary">Create New Packet</button>
+            </div>
+            <div id="packets-list" class="packets-container">
+                <p class="loading">Loading research packets...</p>
+            </div>
+        </section>
+
+        <section class="proteins-list-section">
+            <h2>Discovered Proteins</h2>
+            <div id="proteins-list" class="proteins-container">
+                <p class="loading">Loading proteins...</p>
+            </div>
+        </section>
+
+        <section class="sim-adapters">
+            <h2>Simulation Adapters</h2>
+            <p>Sim Adapters are sandboxed Python scripts with a tight whitelist (numpy, pandas, matplotlib). No network, capped CPU time.</p>
+            <div id="adapters-list" class="adapters-container">
+                <p class="loading">Loading adapters...</p>
+            </div>
+        </section>
+
+        <section class="ai-analysis">
+            <h2>AI-Powered Analysis</h2>
+            <p>Leverage LLM capabilities for research insights, NLP content generation, and educational content.</p>
+            <div class="analysis-form">
+                <textarea id="analysis-content" placeholder="Enter content to analyze (research notes, observations, data descriptions)..." rows="4"></textarea>
+                <div class="analysis-options">
+                    <select id="analysis-type">
+                        <option value="general">General Analysis</option>
+                        <option value="protein">Protein Structure</option>
+                        <option value="ecology">Ecology Systems</option>
+                        <option value="drug_discovery">Drug Discovery</option>
+                        <option value="genomics">Genomics/Personalized Medicine</option>
+                    </select>
+                    <button id="run-analysis" class="btn btn-primary">Analyze</button>
+                </div>
+                <div id="analysis-result" class="analysis-result hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Bioworld. Open source under MIT/Apache-2.0 license.</p>
+            <p>Research companion specifications available in <a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-">GitHub repository</a>.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/research.js') }}"></script>
+</body>
+</html>
