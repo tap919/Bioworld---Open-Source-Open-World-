@@ -1002,19 +1002,19 @@ def enroll_course(course_id):
 def get_classrooms():
     """Get all active classrooms."""
     db = get_db()
+    # Use JOIN to get student counts in a single query, avoiding N+1 query issue
     classrooms = db.execute(
-        'SELECT id, name, teacher_id, subject, description, class_code, max_students, is_active, created_at '
-        'FROM classrooms WHERE is_active = 1 ORDER BY created_at DESC'
+        '''SELECT c.id, c.name, c.teacher_id, c.subject, c.description, c.class_code, 
+                  c.max_students, c.is_active, c.created_at, COUNT(se.id) as student_count 
+           FROM classrooms c 
+           LEFT JOIN student_enrollments se ON c.id = se.classroom_id 
+           WHERE c.is_active = 1 
+           GROUP BY c.id 
+           ORDER BY c.created_at DESC'''
     ).fetchall()
     
     result = []
     for classroom in classrooms:
-        # Count enrolled students
-        student_count = db.execute(
-            'SELECT COUNT(*) FROM student_enrollments WHERE classroom_id = ?',
-            (classroom['id'],)
-        ).fetchone()[0]
-        
         result.append({
             'id': classroom['id'],
             'name': classroom['name'],
@@ -1023,7 +1023,7 @@ def get_classrooms():
             'description': classroom['description'],
             'class_code': classroom['class_code'],
             'max_students': classroom['max_students'],
-            'current_students': student_count,
+            'current_students': classroom['student_count'],
             'is_active': bool(classroom['is_active']),
             'created_at': classroom['created_at']
         })
@@ -1038,6 +1038,15 @@ def create_classroom():
     
     if not data or 'name' not in data or 'teacher_id' not in data or 'subject' not in data:
         return jsonify({'error': 'Missing required fields: name, teacher_id, subject'}), 400
+    
+    # Validate max_students is within reasonable bounds
+    max_students = data.get('max_students', 30)
+    try:
+        max_students = int(max_students)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'max_students must be an integer between 1 and 500'}), 400
+    if max_students < 1 or max_students > 500:
+        return jsonify({'error': 'max_students must be between 1 and 500'}), 400
     
     classroom_id = f"class-{hashlib.sha256((data['name'] + data['teacher_id']).encode()).hexdigest()[:12]}"
     # Generate a unique 6-character class code
@@ -1055,7 +1064,7 @@ def create_classroom():
                 data['subject'],
                 data.get('description', ''),
                 class_code,
-                data.get('max_students', 30)
+                max_students
             )
         )
         db.commit()
@@ -1299,7 +1308,21 @@ def update_lesson_progress(lesson_id):
     
     progress_id = f"progress-{hashlib.sha256((lesson_id + data['student_id']).encode()).hexdigest()[:12]}"
     status = data.get('status', 'in_progress')
+    
+    # Validate status value
+    if status not in ['not_started', 'in_progress', 'completed']:
+        return jsonify({'error': 'Invalid status value. Must be: not_started, in_progress, or completed'}), 400
+    
+    # Validate score if provided
     score = data.get('score')
+    if score is not None:
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Score must be a number between 0 and 100'}), 400
+        if score < 0 or score > 100:
+            return jsonify({'error': 'Score must be between 0 and 100'}), 400
+    
     notes = data.get('notes', '')
     completed_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') if status == 'completed' else None
     
@@ -1614,26 +1637,41 @@ def _simulate_wave(params):
 
 
 def _simulate_particle_motion(params):
-    """Simulate particle motion for physics education."""
+    """
+    Simulate particle motion for physics education.
+    
+    Parameters:
+        params (dict): Simulation parameters. May include:
+            - particle_count (int): Number of particles (default: 50).
+            - temperature (float): Temperature in Kelvin (default: 300).
+            - particle_mass (float): Mass of each particle in kg 
+              (default: 1.67e-27, hydrogen/proton mass).
+    
+    By default, simulates hydrogen gas (proton mass = 1.67e-27 kg).
+    To simulate other gases, provide 'particle_mass' in params.
+    """
     particle_count = params.get('particle_count', 50)
     temperature = params.get('temperature', 300)
+    particle_mass = params.get('particle_mass', 1.67e-27)  # kg, default: hydrogen/proton mass
     
     # Calculate average velocity using kinetic theory of gases:
     # v_avg = sqrt(3 * k_B * T / m)
     # where k_B = 1.38e-23 J/K (Boltzmann constant)
-    # and m = 1.67e-27 kg (approximate proton mass, used for hydrogen gas)
     boltzmann_constant = 1.38e-23  # J/K
-    hydrogen_mass = 1.67e-27  # kg (proton mass approximation)
-    average_velocity = (3 * boltzmann_constant * temperature / hydrogen_mass) ** 0.5
+    average_velocity = (3 * boltzmann_constant * temperature / particle_mass) ** 0.5
+    
+    # Limit to 100 particles for performance in web visualization
+    max_particles = min(particle_count, 100)
     
     return {
         'type': 'particle_motion',
         'particle_count': particle_count,
         'temperature_k': temperature,
+        'particle_mass_kg': particle_mass,
         'average_velocity': average_velocity,
         'particles': [{'id': i, 'x': random.random(), 'y': random.random(), 
                        'vx': random.gauss(0, 1), 'vy': random.gauss(0, 1)} 
-                      for i in range(min(particle_count, 100))]
+                      for i in range(max_particles)]
     }
 
 
@@ -1691,7 +1729,7 @@ def _simulate_dna_replication(params):
             {'name': 'DNA Polymerase I', 'action': 'Replaces RNA primers with DNA'},
             {'name': 'Ligase', 'action': 'Joins DNA fragments'}
         ],
-        'direction': '5\' to 3\'',
+        'direction': "5' to 3'",
         'leading_strand': 'continuous synthesis',
         'lagging_strand': 'Okazaki fragments'
     }

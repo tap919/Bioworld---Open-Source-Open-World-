@@ -5,6 +5,22 @@
  * Dependencies: main.js (provides showToast, formatDate utility functions)
  */
 
+// ============================================================================
+// Utility Functions (defined at top for clarity)
+// ============================================================================
+
+/**
+ * Escape HTML to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text safe for HTML insertion
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadDemonstrations();
@@ -122,11 +138,23 @@ async function loadClassrooms() {
                     </div>
                     ${classroom.description ? `<p class="classroom-desc">${escapeHtml(classroom.description)}</p>` : ''}
                     <div class="classroom-actions">
-                        <button class="btn btn-secondary" onclick="viewClassroomDetails('${classroom.id}')">View Details</button>
-                        <button class="btn btn-secondary" onclick="copyClassCode('${classroom.class_code}')">Copy Code</button>
+                        <button class="btn btn-secondary view-details-btn" data-classroom-id="${escapeHtml(classroom.id)}">View Details</button>
+                        <button class="btn btn-secondary copy-code-btn" data-class-code="${escapeHtml(classroom.class_code)}">Copy Code</button>
                     </div>
                 </div>
             `).join('');
+
+            // Add event listeners for classroom action buttons (avoiding inline handlers for XSS safety)
+            container.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    viewClassroomDetails(this.dataset.classroomId);
+                });
+            });
+            container.querySelectorAll('.copy-code-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    copyClassCode(this.dataset.classCode);
+                });
+            });
         } else {
             container.innerHTML = '<p class="empty-message">No classrooms found. Create your first classroom!</p>';
         }
@@ -194,8 +222,8 @@ async function viewClassroomDetails(classroomId) {
         const data = await response.json();
 
         if (response.ok) {
-            // Show classroom details in a modal or expand view
-            alert(`Classroom: ${data.name}\nCode: ${data.class_code}\nSubject: ${data.subject}\nStudents: ${data.current_students}/${data.max_students}\nLessons: ${data.lessons ? data.lessons.length : 0}`);
+            // Show classroom details using a toast with detailed info (better than alert for accessibility)
+            showClassroomModal(data);
         } else {
             showToast(data.error || 'Failed to load classroom details', 'error');
         }
@@ -205,10 +233,60 @@ async function viewClassroomDetails(classroomId) {
     }
 }
 
+/**
+ * Display classroom details in a modal dialog (more accessible than alert)
+ */
+function showClassroomModal(data) {
+    // Create modal element if it doesn't exist
+    let modal = document.getElementById('classroom-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'classroom-modal';
+        modal.className = 'modal-overlay';
+        document.body.appendChild(modal);
+        
+        // Add overlay click handler once (on the persistent modal element)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${escapeHtml(data.name)}</h3>
+                <button class="modal-close-btn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Class Code:</strong> <span class="class-code">${escapeHtml(data.class_code)}</span></p>
+                <p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
+                <p><strong>Students:</strong> ${data.current_students}/${data.max_students}</p>
+                <p><strong>Lessons:</strong> ${data.lessons ? data.lessons.length : 0}</p>
+                ${data.description ? `<p><strong>Description:</strong> ${escapeHtml(data.description)}</p>` : ''}
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close-btn">Close</button>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+    
+    // Add event listeners for close buttons (fresh each time since innerHTML replaces content)
+    modal.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
+}
+
 function copyClassCode(code) {
     navigator.clipboard.writeText(code).then(() => {
         showToast('Class code copied to clipboard!', 'success');
-    }).catch(() => {
+    }).catch((err) => {
+        console.error('Clipboard error:', err);
         showToast('Failed to copy class code', 'error');
     });
 }
@@ -350,16 +428,23 @@ function renderDemonstrations(demonstrations) {
 
     if (demonstrations.length > 0) {
         container.innerHTML = demonstrations.map(demo => `
-            <div class="demo-card" data-id="${demo.id}">
+            <div class="demo-card" data-id="${escapeHtml(demo.id)}">
                 <div class="demo-icon">${getCategoryIcon(demo.category)}</div>
                 <div class="demo-content">
                     <h4>${escapeHtml(demo.name)}</h4>
                     <span class="demo-category">${escapeHtml(demo.category)}</span>
                     <p>${escapeHtml(demo.description || 'Interactive science demonstration')}</p>
                 </div>
-                <button class="btn btn-primary" onclick="openSimulator('${demo.id}')">Launch Demo</button>
+                <button class="btn btn-primary launch-demo-btn" data-demo-id="${escapeHtml(demo.id)}">Launch Demo</button>
             </div>
         `).join('');
+
+        // Add event listeners for demo launch buttons (avoiding inline handlers for XSS safety)
+        container.querySelectorAll('.launch-demo-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                openSimulator(this.dataset.demoId);
+            });
+        });
     } else {
         container.innerHTML = '<p class="empty-message">No demonstrations found.</p>';
     }
@@ -464,8 +549,8 @@ async function runSimulation() {
     const vizEl = document.getElementById('sim-visualization');
     if (vizEl) vizEl.innerHTML = '<p class="loading">Running simulation...</p>';
 
-    // Gather custom parameters
-    const customParams = gatherCustomParameters();
+    // Collect simulation parameters from form inputs
+    const customParams = collectSimulationParameters();
 
     try {
         const response = await fetch(`/api/demonstrations/${selectedDemo.id}/simulate`, {
@@ -487,7 +572,10 @@ async function runSimulation() {
     }
 }
 
-function gatherCustomParameters() {
+/**
+ * Collect simulation input values from DOM form elements
+ */
+function collectSimulationParameters() {
     const params = {};
 
     // Combustion params
@@ -663,9 +751,11 @@ function renderFlameAnimation(frames) {
 function renderParticleVisualization(particles) {
     if (!particles || particles.length === 0) return '<p>No particles to display</p>';
     
+    // Limit to 50 particles for SVG rendering performance
+    const MAX_SVG_PARTICLES = 50;
     return `
         <svg viewBox="0 0 100 100" class="particle-svg">
-            ${particles.slice(0, 50).map(p => `
+            ${particles.slice(0, MAX_SVG_PARTICLES).map(p => `
                 <circle cx="${p.x * 100}" cy="${p.y * 100}" r="2" fill="#00BFFF" />
             `).join('')}
         </svg>
@@ -748,7 +838,7 @@ async function browseLessons() {
     }
 
     try {
-        const response = await fetch(`/api/lessons?classroom_id=${classroomId}`);
+        const response = await fetch(`/api/lessons?classroom_id=${encodeURIComponent(classroomId)}`);
         const data = await response.json();
 
         if (response.ok && container) {
@@ -772,9 +862,16 @@ async function browseLessons() {
                                 </ul>
                             </div>
                         ` : ''}
-                        <button class="btn btn-secondary" onclick="startLesson('${lesson.id}')">Start Lesson</button>
+                        <button class="btn btn-secondary start-lesson-btn" data-lesson-id="${escapeHtml(lesson.id)}">Start Lesson</button>
                     </div>
                 `).join('');
+
+                // Add event listeners for start lesson buttons (avoiding inline handlers for XSS safety)
+                container.querySelectorAll('.start-lesson-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        startLesson(this.dataset.lessonId);
+                    });
+                });
             } else {
                 container.innerHTML = '<p class="empty-message">No lessons found for this classroom.</p>';
             }
@@ -790,14 +887,4 @@ async function browseLessons() {
 function startLesson(lessonId) {
     showToast('Lesson started! In the full game, this would launch the in-game lesson experience.', 'info');
     // In a full implementation, this would communicate with the game client
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
