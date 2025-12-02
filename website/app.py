@@ -1079,15 +1079,26 @@ def enroll_course(course_id):
 # NPC System - Randomized but Mathematically Fair Rewards
 # ============================================================================
 
+# Configuration constants for game balance tuning
+MAX_LUCK_MULTIPLIER = 2.0  # Maximum luck bonus cap to prevent exploitation
+MIN_PLAYER_LEVEL = 1  # Minimum effective player level for calculations
+LEVEL_BONUS_FACTOR = 0.5  # Scaling factor for level-based bonuses
+REWARD_VARIANCE_MIN = 0.8  # Minimum variance multiplier (±20%)
+REWARD_VARIANCE_MAX = 1.2  # Maximum variance multiplier (±20%)
+
+
 def calculate_fair_reward(player_level, npc_rarity, reward_type):
     """
     Calculate mathematically fair rewards using weighted probability distribution.
     Ensures game balance while maintaining randomness.
     
     Uses a modified pity system and weighted random selection to ensure fairness:
-    - Base reward scales with player level
+    - Base reward scales with player level (log scaling for diminishing returns)
     - Rarity multiplier affects reward quality
-    - Small variance to maintain excitement without exploitation
+    - Small variance (±20%) to maintain excitement without exploitation
+    
+    Note: player_level is clamped to MIN_PLAYER_LEVEL (1) minimum, meaning level 0
+    and level 1 players receive the same base reward.
     """
     # Base multipliers by rarity
     rarity_multipliers = {
@@ -1112,9 +1123,11 @@ def calculate_fair_reward(player_level, npc_rarity, reward_type):
     multiplier = rarity_multipliers.get(npc_rarity, 1.0)
     base = base_values.get(reward_type, 5.0)
     
-    # Calculate fair reward with bounded variance (±20%)
-    variance = random.uniform(0.8, 1.2)
-    level_bonus = math.log(max(player_level, 1) + 1) * 0.5
+    # Calculate fair reward with bounded variance
+    variance = random.uniform(REWARD_VARIANCE_MIN, REWARD_VARIANCE_MAX)
+    # Use log scaling for level bonus with diminishing returns
+    effective_level = max(player_level, MIN_PLAYER_LEVEL)
+    level_bonus = math.log(effective_level + 1) * LEVEL_BONUS_FACTOR
     
     reward = base * multiplier * variance * (1 + level_bonus)
     
@@ -1145,9 +1158,9 @@ def select_weighted_reward(loot_entries, player_luck=1.0):
         weight = entry.get('weight', 1)
         rarity = entry.get('rarity', 'common')
         
-        # Luck affects rare+ items
+        # Luck affects rare+ items, capped to prevent exploitation
         if rarity in ['rare', 'epic', 'legendary'] and player_luck > 1.0:
-            weight = weight * min(player_luck, 2.0)  # Cap luck bonus at 2x
+            weight = weight * min(player_luck, MAX_LUCK_MULTIPLIER)
         
         adjusted_entries.append({**entry, 'adjusted_weight': weight})
     
