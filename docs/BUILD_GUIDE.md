@@ -1169,6 +1169,43 @@ Use this checklist when implementing Bioworld components:
 - [ ] Enable Lumen global illumination
 - [ ] Set up Niagara systems for effects
 
+### Phase 5: NPCs and World Interaction
+
+#### NPC System
+- [ ] Implement NPC Actor class with role-based behavior
+- [ ] Create loot table system with weighted random selection
+- [ ] Implement mathematically fair reward calculation
+- [ ] Set up NPC interaction events and callbacks
+- [ ] Create NPC spawn points and zone management
+- [ ] Implement NPC rarity tiers (common, uncommon, rare, epic, legendary)
+
+#### Bartering and Trading
+- [ ] Implement player-to-player barter system
+- [ ] Create NPC merchant trading interface
+- [ ] Set up trade validation and escrow system
+- [ ] Implement trade history and logging
+
+#### Base Elements and Crafting
+- [ ] Create base element data tables
+- [ ] Implement element gathering mechanics
+- [ ] Set up element inventory system
+- [ ] Create tool crafting system with tiered requirements
+- [ ] Implement tool durability and repair mechanics
+
+#### Advanced Craftables
+- [ ] Implement jetpack crafting and flight mechanics
+- [ ] Create vehicle crafting (cars, motorcycles, boats)
+- [ ] Implement shelter and camp building system
+- [ ] Create lab extension crafting for research bonuses
+- [ ] Set up equipment crafting (armor, scanners, communicators)
+
+#### Research Progress System
+- [ ] Implement disease research progress tracking
+- [ ] Create unique build bonus calculation
+- [ ] Set up synergy combinations for element bonuses
+- [ ] Implement global research milestones
+- [ ] Create research contribution leaderboards
+
 ---
 
 ## Summary
@@ -1188,6 +1225,231 @@ These are implemented using Unreal Engine's:
 - Lumen & Nanite
 
 The result is a self-assembling machine: simple rules for individual gears (components and systems) combine to create the massive, complex, and evolving Bioworld ecosystem.
+
+---
+
+## 5.5 NPC and Crafting System Architecture
+
+### NPC System Design
+
+NPCs provide help, aid, information, tools, special files, NFTs, and coins through a mathematically balanced randomization system.
+
+#### NPC Types and Roles
+
+| NPC Type | Primary Role | Reward Types |
+|----------|-------------|--------------|
+| Helper | Aid | Health packs, energy boosts, protection buffs |
+| Merchant | Trade | Coins, bartering opportunities |
+| Information Giver | Information | Research tips, location hints, recipe clues |
+| Tool Giver | Tools | Basic to rare tools |
+| Quest Giver | Various | Mission rewards, special items |
+| Trainer | Aid/Information | Skill boosts, knowledge |
+| Banker | Coins | Currency exchange, storage |
+| Researcher | Research | Research contributions, data samples |
+
+#### Mathematical Fairness Algorithm
+
+```cpp
+// Weighted Random Selection
+UFUNCTION(BlueprintCallable)
+FLootResult SelectWeightedReward(const TArray<FLootEntry>& Entries, float PlayerLuck)
+{
+    // Calculate adjusted weights based on player luck
+    // Rare+ items get boosted weights (capped at 2x)
+    // Uses cumulative distribution for selection
+    
+    float TotalWeight = 0;
+    for (const FLootEntry& Entry : Entries)
+    {
+        float AdjustedWeight = Entry.Weight;
+        if (Entry.Rarity >= ERarity::Rare && PlayerLuck > 1.0f)
+        {
+            AdjustedWeight *= FMath::Min(PlayerLuck, 2.0f);
+        }
+        TotalWeight += AdjustedWeight;
+    }
+    
+    // Random selection from weighted distribution
+    float Roll = FMath::FRand() * TotalWeight;
+    // ... selection logic
+}
+
+// Fair Reward Calculation
+UFUNCTION(BlueprintCallable)
+float CalculateFairReward(int32 PlayerLevel, ERarity NPCRarity, ERewardType RewardType)
+{
+    // Base × Rarity × Variance × Level Bonus
+    // Variance bounded to ±20% to prevent exploitation
+    // Level bonus uses logarithmic scaling for diminishing returns
+}
+```
+
+#### Rarity Multipliers
+
+| Rarity | Multiplier | Approximate Drop Rate |
+|--------|------------|----------------------|
+| Common | 1.0× | 50% |
+| Uncommon | 1.5× | 30% |
+| Rare | 2.5× | 15% |
+| Epic | 4.0× | 4% |
+| Legendary | 7.5× | 1% |
+
+### Crafting System
+
+#### Base Elements
+
+Foundation materials for all crafting:
+
+| Element Type | Use Case | Research Contribution |
+|-------------|----------|----------------------|
+| Organic | Biological crafts, healing items | 0.5 |
+| Inorganic | Structural components, tools | 0.3 |
+| Synthetic | Advanced tech, upgrades | 0.7 |
+| Biological | Life sciences, medicine | 0.8 |
+| Energy | Power sources, propulsion | 0.6 |
+| Catalyst | Speed bonuses, efficiency | 0.4 |
+| Compound | Combined effects | 0.5 |
+
+#### Tool Tiers
+
+| Tier | Required Level | Durability | Craft Speed |
+|------|---------------|------------|-------------|
+| 1 | 1 | 100 | 1× |
+| 2 | 5 | 150 | 1.25× |
+| 3 | 10 | 200 | 1.5× |
+| 4 | 20 | 300 | 2× |
+| 5 | 30 | 500 | 3× |
+
+#### Advanced Craftable Items
+
+| Category | Items | Requirements |
+|----------|-------|-------------|
+| Transport | Jetpack, Flight Suit, Car, Motorcycle, Boat | Tier 2+ tools, multiple elements |
+| Shelter | Tent, Cabin, Outpost, Research Station | Construction tools, organic + inorganic |
+| Equipment | Armor, Scanner, Communicator | Crafting tools, synthetic elements |
+| Research | Lab Extension, Analyzer | High-tier tools, all element types |
+
+### Research Progress System
+
+#### Unique Build Bonus Calculation
+
+Creative combinations of elements provide research bonuses:
+
+```cpp
+float CalculateUniqueBuildBonus(const TArray<EElementType>& ElementsUsed)
+{
+    // Base bonus: 0.5 per element
+    float BaseBonus = ElementsUsed.Num() * 0.5f;
+    
+    // Synergy bonuses for specific combinations
+    float SynergyBonus = 0;
+    if (HasCombination({Organic, Catalyst})) SynergyBonus = FMath::Max(SynergyBonus, 2.0f);
+    if (HasCombination({Biological, Synthetic})) SynergyBonus = FMath::Max(SynergyBonus, 3.0f);
+    if (HasCombination({Energy, Compound})) SynergyBonus = FMath::Max(SynergyBonus, 2.5f);
+    if (HasCombination({Organic, Biological, Catalyst})) SynergyBonus = FMath::Max(SynergyBonus, 5.0f);
+    if (HasCombination({Synthetic, Energy, Compound})) SynergyBonus = FMath::Max(SynergyBonus, 4.0f);
+    
+    // Uniqueness multiplier (logarithmic scaling)
+    float Uniqueness = FMath::Loge(ElementsUsed.Num() + 1) * 0.3f;
+    
+    return (BaseBonus + SynergyBonus) * (1 + Uniqueness);
+}
+```
+
+#### Shelter Research Bonuses
+
+| Shelter Type | Research Bonus | Capacity |
+|--------------|---------------|----------|
+| Tent | +5% | 2 |
+| Cabin | +10% | 4 |
+| Outpost | +15% | 6 |
+| Research Station | +30% | 8 |
+| Mobile Lab | +25% | 4 |
+| Underground Bunker | +20% | 10 |
+| Treehouse | +10% | 3 |
+| Floating Platform | +15% | 5 |
+
+### Implementation Data Structures
+
+```cpp
+// NPC Data Structure
+USTRUCT(BlueprintType)
+struct FNPCData
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString NPCID;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ENPCType NPCType;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ENPCRole Role;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ERarity Rarity;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString LootTableID;
+};
+
+// Loot Table Entry
+USTRUCT(BlueprintType)
+struct FLootEntry
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString ItemID;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EItemType ItemType;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Weight;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ERarity Rarity;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 MinAmount;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 MaxAmount;
+};
+
+// Craftable Item
+USTRUCT(BlueprintType)
+struct FCraftableItem
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString ItemID;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ECraftCategory Category;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FString> RequiredTools;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FElementRequirement> RequiredElements;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 CraftTimeSeconds;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float ResearchBonus;
+};
+```
 
 ---
 
