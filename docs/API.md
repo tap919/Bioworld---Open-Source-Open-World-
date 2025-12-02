@@ -380,6 +380,15 @@ Community spaces allow players to collaboratively build and develop the ecosyste
 ### GET /api/community-spaces
 
 List all available community space presets.
+## Education System
+
+The Education System enables teachers to hold classes in-game with interactive science demonstrations.
+
+### Classrooms
+
+#### GET /api/classrooms
+
+List all active classrooms.
 
 **Response**
 
@@ -425,6 +434,52 @@ Get details of a specific community space preset.
 ### POST /api/community-spaces/place
 
 Place a community space in the world.
+    "classrooms": [
+        {
+            "id": "class-abc123",
+            "name": "Biology 101",
+            "teacher_id": "teacher-001",
+            "subject": "biology",
+            "description": "Introduction to Biology",
+            "class_code": "ABC123",
+            "max_students": 30,
+            "current_students": 15,
+            "is_active": true,
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+#### POST /api/classrooms
+
+Create a new classroom.
+
+**Request Body**
+
+```json
+{
+    "name": "Biology 101",
+    "teacher_id": "teacher-001",
+    "subject": "biology",
+    "description": "Introduction to Biology with interactive demonstrations",
+    "max_students": 30
+}
+```
+
+**Response (201 Created)**
+
+```json
+{
+    "message": "Classroom created",
+    "id": "class-abc123",
+    "class_code": "ABC123"
+}
+```
+
+#### POST /api/classrooms/join
+
+Join a classroom using a class code.
 
 **Request Body**
 
@@ -438,6 +493,8 @@ Place a community space in the world.
         "z": 0.0
     },
     "rotation": 0.0
+    "class_code": "ABC123",
+    "student_id": "student-001"
 }
 ```
 
@@ -483,6 +540,50 @@ List all public blueprints.
 ### POST /api/blueprints
 
 Create and save a new blueprint.
+    "message": "Successfully joined classroom",
+    "classroom_id": "class-abc123",
+    "classroom_name": "Biology 101",
+    "subject": "biology"
+}
+```
+
+### Lessons
+
+#### GET /api/lessons
+
+List lessons, optionally filtered by classroom.
+
+**Query Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| classroom_id | string | Filter lessons by classroom |
+
+#### POST /api/lessons
+
+Create a new lesson for a classroom.
+
+**Request Body**
+
+```json
+{
+    "classroom_id": "class-abc123",
+    "title": "Introduction to Combustion",
+    "subject_area": "combustion",
+    "description": "Learn about the fire triangle and chemical reactions",
+    "objectives": [
+        "Understand the fire triangle",
+        "Identify products of combustion"
+    ],
+    "materials": ["Safety goggles", "Lab notebook"],
+    "demonstrations": ["demo-combustion-basic"],
+    "estimated_duration": 45
+}
+```
+
+#### POST /api/lessons/:lesson_id/progress
+
+Update a student's progress on a lesson.
 
 **Request Body**
 
@@ -512,6 +613,23 @@ Create and save a new blueprint.
 ### GET /api/blueprints/:code
 
 Get a blueprint by its share code.
+    "student_id": "student-001",
+    "status": "completed",
+    "score": 85,
+    "notes": "Great understanding of combustion principles"
+}
+```
+
+**Status Values:**
+- `not_started` - Student hasn't begun the lesson
+- `in_progress` - Student is working on the lesson
+- `completed` - Student finished the lesson
+
+### Student Progress
+
+#### GET /api/students/:student_id/progress
+
+Get all lesson progress for a student.
 
 **Response**
 
@@ -532,6 +650,35 @@ Get a blueprint by its share code.
 ### GET /api/building-elements
 
 List all creative building element presets (plants, trees, roads, lights).
+    "student_id": "student-001",
+    "progress": [
+        {
+            "lesson_id": "lesson-xyz789",
+            "lesson_title": "Introduction to Combustion",
+            "subject_area": "combustion",
+            "classroom_id": "class-abc123",
+            "status": "completed",
+            "score": 85,
+            "completed_at": "2025-01-01 12:30:00",
+            "notes": ""
+        }
+    ]
+}
+```
+
+### Science Demonstrations
+
+Interactive visualizations for teaching scientific concepts.
+
+#### GET /api/demonstrations
+
+List all available demonstrations.
+
+**Query Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| category | string | Filter by category: `chemistry`, `physics`, `biology` |
 
 **Response**
 
@@ -569,6 +716,81 @@ List all creative building element presets (plants, trees, roads, lights).
 ### GET /api/building-elements/:preset_id
 
 Get details of a specific building element preset.
+    "demonstrations": [
+        {
+            "id": "demo-combustion-basic",
+            "name": "Basic Combustion",
+            "category": "chemistry",
+            "description": "Demonstrates the combustion reaction with different fuels",
+            "visualization_type": "combustion",
+            "parameters": {
+                "fuel": "methane",
+                "oxygen_ratio": 2.0
+            },
+            "educational_notes": "Shows the fire triangle...",
+            "safety_notes": "Virtual demonstration only"
+        }
+    ]
+}
+```
+
+**Available Demonstrations:**
+
+| ID | Name | Category | Description |
+|----|------|----------|-------------|
+| demo-combustion-basic | Basic Combustion | Chemistry | Fire triangle, fuel types, products |
+| demo-acid-base | Acid-Base Neutralization | Chemistry | Neutralization reactions |
+| demo-water-molecule | Water Molecule Structure | Chemistry | 3D molecular visualization |
+| demo-light-waves | Light Wave Properties | Physics | Electromagnetic spectrum |
+| demo-gas-particles | Gas Particle Motion | Physics | Kinetic theory visualization |
+| demo-cell-mitosis | Cell Division (Mitosis) | Biology | Phases of cell division |
+| demo-dna-replication | DNA Replication | Biology | DNA copying process |
+| demo-protein-synthesis | Protein Synthesis | Biology | Transcription and translation |
+
+#### POST /api/demonstrations/:demo_id/simulate
+
+Run a science demonstration simulation.
+
+**Request Body**
+
+```json
+{
+    "custom_parameters": {
+        "fuel": "propane",
+        "initial_temperature": 25
+    }
+}
+```
+
+**Response (Combustion Example)**
+
+```json
+{
+    "demonstration_id": "demo-combustion-basic",
+    "name": "Basic Combustion",
+    "category": "chemistry",
+    "visualization_type": "combustion",
+    "simulation_result": {
+        "type": "combustion",
+        "fuel": "propane",
+        "chemical_equation": "C3H8 + 5O2 → 3CO2 + 4H2O",
+        "energy_released_kj": 2220,
+        "flame_color": "blue-yellow",
+        "initial_temperature_c": 25,
+        "final_temperature_c": 1000,
+        "products": ["CO2", "H2O"],
+        "learning_points": [
+            "Combustion requires fuel, oxygen, and heat (fire triangle)",
+            "Complete combustion produces CO2 and H2O",
+            "Energy is released as heat and light",
+            "Different fuels produce different flame colors"
+        ],
+        "visualization_frames": [...]
+    },
+    "educational_notes": "Shows the fire triangle...",
+    "safety_notes": "Virtual demonstration only"
+}
+```
 
 ---
 

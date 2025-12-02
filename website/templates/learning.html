@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bioworld Learning Center - Science education through immersive demonstrations">
+    <title>Learning Center - Bioworld MMORPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/">Bioworld</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/research">Research</a></li>
+                <li><a href="/learning" class="active">Learning</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="https://github.com/tap919/Bioworld---Open-Source-Open-World-" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="page-header">
+            <h1>🎓 Learning Center</h1>
+            <p>Interactive science education through immersive demonstrations and virtual classrooms. 
+               Perfect for teachers and students exploring chemistry, physics, and biology.</p>
+        </section>
+
+        <!-- For Teachers Section -->
+        <section class="teacher-section">
+            <h2>👨‍🏫 For Teachers</h2>
+            <p>Create virtual classrooms and design engaging lessons with interactive science demonstrations.</p>
+            
+            <div class="classroom-controls">
+                <button id="create-classroom" class="btn btn-primary">Create Classroom</button>
+                <button id="view-my-classrooms" class="btn btn-secondary">View My Classrooms</button>
+            </div>
+
+            <div id="classroom-form" class="form-container hidden">
+                <h3>Create New Classroom</h3>
+                <div class="form-grid">
+                    <input type="text" id="classroom-name" placeholder="Classroom Name (e.g., Biology 101)" />
+                    <input type="text" id="teacher-id" placeholder="Your Teacher ID" />
+                    <select id="classroom-subject">
+                        <option value="">Select Subject...</option>
+                        <option value="chemistry">Chemistry</option>
+                        <option value="physics">Physics</option>
+                        <option value="biology">Biology</option>
+                        <option value="earth_science">Earth Science</option>
+                        <option value="environmental_science">Environmental Science</option>
+                        <option value="general_science">General Science</option>
+                    </select>
+                    <input type="number" id="max-students" placeholder="Max Students (default: 30)" min="1" max="100" />
+                    <textarea id="classroom-description" placeholder="Classroom description..." rows="2"></textarea>
+                    <button id="submit-classroom" class="btn btn-primary">Create</button>
+                </div>
+            </div>
+
+            <div id="my-classrooms" class="classrooms-list hidden">
+                <h3>Your Classrooms</h3>
+                <div id="classrooms-container">
+                    <p class="loading">Loading classrooms...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- For Students Section -->
+        <section class="student-section">
+            <h2>👨‍🎓 For Students</h2>
+            <p>Join classrooms, explore lessons, and track your learning progress.</p>
+            
+            <div class="join-controls">
+                <div class="join-form">
+                    <input type="text" id="join-class-code" placeholder="Enter Class Code (e.g., ABC123)" />
+                    <input type="text" id="student-id" placeholder="Your Student ID" />
+                    <button id="join-classroom" class="btn btn-primary">Join Classroom</button>
+                </div>
+            </div>
+
+            <div id="student-progress" class="progress-section">
+                <h3>My Learning Progress</h3>
+                <div class="progress-controls">
+                    <input type="text" id="progress-student-id" placeholder="Enter your Student ID" />
+                    <button id="view-progress" class="btn btn-secondary">View Progress</button>
+                </div>
+                <div id="progress-container" class="hidden">
+                    <p class="loading">Loading progress...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Science Demonstrations -->
+        <section class="demonstrations-section">
+            <h2>🔬 Science Demonstrations</h2>
+            <p>Interactive visualizations that bring scientific concepts to life. Use these in your lessons or explore independently.</p>
+            
+            <div class="demo-filters">
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="chemistry">Chemistry</button>
+                <button class="filter-btn" data-category="physics">Physics</button>
+                <button class="filter-btn" data-category="biology">Biology</button>
+            </div>
+
+            <div id="demonstrations-list" class="demonstrations-container">
+                <p class="loading">Loading demonstrations...</p>
+            </div>
+        </section>
+
+        <!-- Demo Simulator -->
+        <section class="simulator-section hidden" id="simulator-section">
+            <h2>🧪 Demonstration Simulator</h2>
+            <div id="simulator-container">
+                <div class="simulator-header">
+                    <h3 id="sim-demo-name">Select a demonstration</h3>
+                    <button id="close-simulator" class="btn btn-secondary">Close</button>
+                </div>
+                <div class="simulator-content">
+                    <div id="sim-visualization" class="visualization-area">
+                        <p>Select a demonstration to begin</p>
+                    </div>
+                    <div id="sim-controls" class="controls-area">
+                        <h4>Parameters</h4>
+                        <div id="sim-parameters"></div>
+                        <button id="run-simulation" class="btn btn-primary">Run Simulation</button>
+                    </div>
+                    <div id="sim-info" class="info-area">
+                        <h4>Educational Notes</h4>
+                        <div id="sim-educational-notes"></div>
+                        <h4>Safety Notes</h4>
+                        <div id="sim-safety-notes"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lesson Builder (for teachers) -->
+        <section class="lesson-builder-section">
+            <h2>📝 Lesson Builder</h2>
+            <p>Create structured lessons with learning objectives, demonstrations, and materials.</p>
+            
+            <div id="lesson-form" class="form-container">
+                <div class="form-grid">
+                    <input type="text" id="lesson-classroom-id" placeholder="Classroom ID" />
+                    <input type="text" id="lesson-title" placeholder="Lesson Title" />
+                    <select id="lesson-subject">
+                        <option value="">Select Subject Area...</option>
+                        <option value="combustion">Combustion & Chemical Reactions</option>
+                        <option value="molecular_structure">Molecular Structure</option>
+                        <option value="waves_light">Waves & Light</option>
+                        <option value="particle_physics">Particle Physics</option>
+                        <option value="cell_biology">Cell Biology</option>
+                        <option value="genetics">Genetics & DNA</option>
+                        <option value="ecology">Ecology & Environment</option>
+                    </select>
+                    <textarea id="lesson-description" placeholder="Lesson description..." rows="2"></textarea>
+                    <input type="number" id="lesson-duration" placeholder="Duration (minutes)" min="5" max="180" value="45" />
+                    <textarea id="lesson-objectives" placeholder="Learning objectives (one per line)" rows="3"></textarea>
+                    <textarea id="lesson-materials" placeholder="Required materials (one per line)" rows="2"></textarea>
+                    <button id="create-lesson" class="btn btn-primary">Create Lesson</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Classroom Lessons View -->
+        <section class="lessons-view-section">
+            <h2>📚 Browse Lessons</h2>
+            <div class="lessons-controls">
+                <input type="text" id="browse-classroom-id" placeholder="Enter Classroom ID to view lessons" />
+                <button id="browse-lessons" class="btn btn-secondary">Browse</button>
+            </div>
+            <div id="lessons-container" class="lessons-list hidden">
+                <p class="loading">Loading lessons...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Bioworld. Open source under MIT/Apache-2.0 license.</p>
+            <p>Education features designed to support science teachers and students in interactive learning.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/learning.js') }}"></script>
+</body>
+</html>
