@@ -27,6 +27,19 @@ The game follows a proven pattern that allows players to monetize their scientif
 - 📚 **Teaching Platform** - Create courses and guides
 - 📈 **Market Trading** - Trade proteins, patents, and assets
 
+### 🎓 Education Features (NEW)
+Bioworld serves as a legitimate teaching aid, enabling science teachers to hold interactive classes in-game:
+
+- **Virtual Classrooms** - Teachers can create classrooms with unique join codes
+- **Interactive Science Demonstrations** - Visual simulations of:
+  - 🔥 **Combustion reactions** with different fuels (methane, propane, hydrogen)
+  - ⚗️ **Chemical reactions** and molecular structures
+  - 🧬 **Cell division** (mitosis/meiosis) and DNA replication
+  - ⚡ **Physics phenomena** (waves, particles, electromagnetic spectrum)
+- **Lesson Builder** - Create structured lessons with objectives and demonstrations
+- **Student Progress Tracking** - Monitor student completion and scores
+- **Learning Center** - Students can explore and research independently
+
 ## Website & API
 
 The `website/` directory contains a Flask-based web application:
@@ -47,6 +60,15 @@ Visit `http://localhost:5000` for the web interface.
 - `/api/player-apis` - Expose models as paid APIs
 - `/api/market/orders` - Market trading system
 - `/api/courses` - Educational course system
+
+#### Education API Endpoints
+- `/api/classrooms` - Create and manage virtual classrooms
+- `/api/classrooms/join` - Join a classroom with a class code
+- `/api/lessons` - Create and retrieve lessons
+- `/api/lessons/<id>/progress` - Update student lesson progress
+- `/api/students/<id>/progress` - Get student learning progress
+- `/api/demonstrations` - Browse interactive science demonstrations
+- `/api/demonstrations/<id>/simulate` - Run a science demonstration simulation
 
 See [docs/API.md](docs/API.md) for full documentation.
 

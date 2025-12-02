@@ -140,6 +140,64 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
+        CREATE TABLE IF NOT EXISTS classrooms (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            teacher_id TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            description TEXT,
+            class_code TEXT UNIQUE,
+            max_students INTEGER DEFAULT 30,
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS lessons (
+            id TEXT PRIMARY KEY,
+            classroom_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            subject_area TEXT NOT NULL,
+            description TEXT,
+            objectives_json TEXT,
+            demonstrations_json TEXT,
+            materials_json TEXT,
+            estimated_duration INTEGER DEFAULT 45,
+            lesson_order INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS student_enrollments (
+            id TEXT PRIMARY KEY,
+            classroom_id TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
+            UNIQUE(classroom_id, student_id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS lesson_progress (
+            id TEXT PRIMARY KEY,
+            lesson_id TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            status TEXT DEFAULT 'not_started',
+            score REAL,
+            completed_at TIMESTAMP,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (lesson_id) REFERENCES lessons(id),
+            UNIQUE(lesson_id, student_id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS demonstrations (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            visualization_type TEXT NOT NULL,
+            parameters_json TEXT,
+            educational_notes TEXT,
+            safety_notes TEXT,
         -- NPC System Tables
         CREATE TABLE IF NOT EXISTS npcs (
             id TEXT PRIMARY KEY,
@@ -321,6 +379,12 @@ def research():
 def about():
     """Render the about page."""
     return render_template('about.html')
+
+
+@app.route('/learning')
+def learning():
+    """Render the learning center page."""
+    return render_template('learning.html')
 
 
 # ============================================================================
@@ -1076,6 +1140,62 @@ def enroll_course(course_id):
 
 
 # ============================================================================
+# Education System - Classrooms for Teachers and Learning Centers for Students
+# ============================================================================
+
+@app.route('/api/classrooms', methods=['GET'])
+def get_classrooms():
+    """Get all active classrooms."""
+    db = get_db()
+    # Use JOIN to get student counts in a single query, avoiding N+1 query issue
+    classrooms = db.execute(
+        '''SELECT c.id, c.name, c.teacher_id, c.subject, c.description, c.class_code, 
+                  c.max_students, c.is_active, c.created_at, COUNT(se.id) as student_count 
+           FROM classrooms c 
+           LEFT JOIN student_enrollments se ON c.id = se.classroom_id 
+           WHERE c.is_active = 1 
+           GROUP BY c.id 
+           ORDER BY c.created_at DESC'''
+    ).fetchall()
+    
+    result = []
+    for classroom in classrooms:
+        result.append({
+            'id': classroom['id'],
+            'name': classroom['name'],
+            'teacher_id': classroom['teacher_id'],
+            'subject': classroom['subject'],
+            'description': classroom['description'],
+            'class_code': classroom['class_code'],
+            'max_students': classroom['max_students'],
+            'current_students': classroom['student_count'],
+            'is_active': bool(classroom['is_active']),
+            'created_at': classroom['created_at']
+        })
+    
+    return jsonify({'classrooms': result})
+
+
+@app.route('/api/classrooms', methods=['POST'])
+def create_classroom():
+    """Create a new classroom for a teacher."""
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'teacher_id' not in data or 'subject' not in data:
+        return jsonify({'error': 'Missing required fields: name, teacher_id, subject'}), 400
+    
+    # Validate max_students is within reasonable bounds
+    max_students = data.get('max_students', 30)
+    try:
+        max_students = int(max_students)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'max_students must be an integer between 1 and 500'}), 400
+    if max_students < 1 or max_students > 500:
+        return jsonify({'error': 'max_students must be between 1 and 500'}), 400
+    
+    classroom_id = f"class-{hashlib.sha256((data['name'] + data['teacher_id']).encode()).hexdigest()[:12]}"
+    # Generate a unique 6-character class code
+    class_code = hashlib.sha256((classroom_id + str(datetime.utcnow())).encode()).hexdigest()[:6].upper()
 # NPC System - Randomized but Mathematically Fair Rewards
 # ============================================================================
 
@@ -1270,6 +1390,16 @@ def create_npc():
     db = get_db()
     try:
         db.execute(
+            'INSERT INTO classrooms (id, name, teacher_id, subject, description, class_code, max_students) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                classroom_id,
+                data['name'],
+                data['teacher_id'],
+                data['subject'],
+                data.get('description', ''),
+                class_code,
+                max_students
             'INSERT INTO npcs (id, name, npc_type, role, location_zone, description, '
             'specialization, rarity, loot_table_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
@@ -1286,6 +1416,194 @@ def create_npc():
         )
         db.commit()
         return jsonify({
+            'message': 'Classroom created',
+            'id': classroom_id,
+            'class_code': class_code
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Classroom with this configuration already exists'}), 409
+
+
+@app.route('/api/classrooms/<classroom_id>', methods=['GET'])
+def get_classroom(classroom_id):
+    """Get a specific classroom by ID."""
+    db = get_db()
+    classroom = db.execute(
+        'SELECT * FROM classrooms WHERE id = ?', (classroom_id,)
+    ).fetchone()
+    
+    if classroom is None:
+        return jsonify({'error': 'Classroom not found'}), 404
+    
+    # Get enrolled students count
+    student_count = db.execute(
+        'SELECT COUNT(*) FROM student_enrollments WHERE classroom_id = ?',
+        (classroom_id,)
+    ).fetchone()[0]
+    
+    # Get lessons for this classroom
+    lessons = db.execute(
+        'SELECT id, title, subject_area, description, estimated_duration, lesson_order '
+        'FROM lessons WHERE classroom_id = ? ORDER BY lesson_order',
+        (classroom_id,)
+    ).fetchall()
+    
+    return jsonify({
+        'id': classroom['id'],
+        'name': classroom['name'],
+        'teacher_id': classroom['teacher_id'],
+        'subject': classroom['subject'],
+        'description': classroom['description'],
+        'class_code': classroom['class_code'],
+        'max_students': classroom['max_students'],
+        'current_students': student_count,
+        'is_active': bool(classroom['is_active']),
+        'created_at': classroom['created_at'],
+        'lessons': [dict(lesson) for lesson in lessons]
+    })
+
+
+@app.route('/api/classrooms/join', methods=['POST'])
+def join_classroom():
+    """Join a classroom using a class code."""
+    data = request.get_json()
+    
+    if not data or 'class_code' not in data or 'student_id' not in data:
+        return jsonify({'error': 'Missing required fields: class_code, student_id'}), 400
+    
+    db = get_db()
+    classroom = db.execute(
+        'SELECT * FROM classrooms WHERE class_code = ? AND is_active = 1',
+        (data['class_code'].upper(),)
+    ).fetchone()
+    
+    if not classroom:
+        return jsonify({'error': 'Invalid or inactive class code'}), 404
+    
+    # Check if classroom is full
+    student_count = db.execute(
+        'SELECT COUNT(*) FROM student_enrollments WHERE classroom_id = ?',
+        (classroom['id'],)
+    ).fetchone()[0]
+    
+    if student_count >= classroom['max_students']:
+        return jsonify({'error': 'Classroom is full'}), 400
+    
+    enrollment_id = f"enroll-{hashlib.sha256((classroom['id'] + data['student_id']).encode()).hexdigest()[:12]}"
+    
+    try:
+        db.execute(
+            'INSERT INTO student_enrollments (id, classroom_id, student_id) VALUES (?, ?, ?)',
+            (enrollment_id, classroom['id'], data['student_id'])
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Successfully joined classroom',
+            'classroom_id': classroom['id'],
+            'classroom_name': classroom['name'],
+            'subject': classroom['subject']
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Already enrolled in this classroom'}), 409
+
+
+@app.route('/api/classrooms/<classroom_id>/students', methods=['GET'])
+def get_classroom_students(classroom_id):
+    """Get all students enrolled in a classroom."""
+    db = get_db()
+    classroom = db.execute('SELECT * FROM classrooms WHERE id = ?', (classroom_id,)).fetchone()
+    
+    if not classroom:
+        return jsonify({'error': 'Classroom not found'}), 404
+    
+    enrollments = db.execute(
+        'SELECT student_id, enrolled_at FROM student_enrollments WHERE classroom_id = ? ORDER BY enrolled_at',
+        (classroom_id,)
+    ).fetchall()
+    
+    return jsonify({
+        'classroom_id': classroom_id,
+        'students': [{'student_id': e['student_id'], 'enrolled_at': e['enrolled_at']} for e in enrollments]
+    })
+
+
+# ============================================================================
+# Lessons System for Science Education
+# ============================================================================
+
+@app.route('/api/lessons', methods=['GET'])
+def get_lessons():
+    """Get all lessons, optionally filtered by classroom."""
+    classroom_id = request.args.get('classroom_id')
+    
+    db = get_db()
+    if classroom_id:
+        lessons = db.execute(
+            'SELECT * FROM lessons WHERE classroom_id = ? ORDER BY lesson_order',
+            (classroom_id,)
+        ).fetchall()
+    else:
+        lessons = db.execute('SELECT * FROM lessons ORDER BY created_at DESC').fetchall()
+    
+    result = []
+    for lesson in lessons:
+        result.append({
+            'id': lesson['id'],
+            'classroom_id': lesson['classroom_id'],
+            'title': lesson['title'],
+            'subject_area': lesson['subject_area'],
+            'description': lesson['description'],
+            'objectives': json.loads(lesson['objectives_json']) if lesson['objectives_json'] else [],
+            'demonstrations': json.loads(lesson['demonstrations_json']) if lesson['demonstrations_json'] else [],
+            'materials': json.loads(lesson['materials_json']) if lesson['materials_json'] else [],
+            'estimated_duration': lesson['estimated_duration'],
+            'lesson_order': lesson['lesson_order'],
+            'created_at': lesson['created_at']
+        })
+    
+    return jsonify({'lessons': result})
+
+
+@app.route('/api/lessons', methods=['POST'])
+def create_lesson():
+    """Create a new lesson for a classroom."""
+    data = request.get_json()
+    
+    required = ['classroom_id', 'title', 'subject_area']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    # Verify classroom exists
+    db = get_db()
+    classroom = db.execute('SELECT * FROM classrooms WHERE id = ?', (data['classroom_id'],)).fetchone()
+    if not classroom:
+        return jsonify({'error': 'Classroom not found'}), 404
+    
+    lesson_id = f"lesson-{hashlib.sha256((data['title'] + data['classroom_id']).encode()).hexdigest()[:12]}"
+    
+    # Get next lesson order
+    max_order = db.execute(
+        'SELECT MAX(lesson_order) FROM lessons WHERE classroom_id = ?',
+        (data['classroom_id'],)
+    ).fetchone()[0]
+    next_order = (max_order or 0) + 1
+    
+    try:
+        db.execute(
+            'INSERT INTO lessons (id, classroom_id, title, subject_area, description, objectives_json, '
+            'demonstrations_json, materials_json, estimated_duration, lesson_order) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                lesson_id,
+                data['classroom_id'],
+                data['title'],
+                data['subject_area'],
+                data.get('description', ''),
+                json.dumps(data.get('objectives', [])),
+                json.dumps(data.get('demonstrations', [])),
+                json.dumps(data.get('materials', [])),
+                data.get('estimated_duration', 45),
+                data.get('lesson_order', next_order)
             'message': 'NPC created successfully',
             'id': npc_id,
             'name': data['name'],
@@ -1633,6 +1951,164 @@ def create_element():
         )
         db.commit()
         return jsonify({
+            'message': 'Lesson created',
+            'id': lesson_id,
+            'lesson_order': next_order
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Lesson with this configuration already exists'}), 409
+
+
+@app.route('/api/lessons/<lesson_id>', methods=['GET'])
+def get_lesson(lesson_id):
+    """Get a specific lesson by ID."""
+    db = get_db()
+    lesson = db.execute('SELECT * FROM lessons WHERE id = ?', (lesson_id,)).fetchone()
+    
+    if not lesson:
+        return jsonify({'error': 'Lesson not found'}), 404
+    
+    return jsonify({
+        'id': lesson['id'],
+        'classroom_id': lesson['classroom_id'],
+        'title': lesson['title'],
+        'subject_area': lesson['subject_area'],
+        'description': lesson['description'],
+        'objectives': json.loads(lesson['objectives_json']) if lesson['objectives_json'] else [],
+        'demonstrations': json.loads(lesson['demonstrations_json']) if lesson['demonstrations_json'] else [],
+        'materials': json.loads(lesson['materials_json']) if lesson['materials_json'] else [],
+        'estimated_duration': lesson['estimated_duration'],
+        'lesson_order': lesson['lesson_order'],
+        'created_at': lesson['created_at']
+    })
+
+
+@app.route('/api/lessons/<lesson_id>/progress', methods=['POST'])
+def update_lesson_progress(lesson_id):
+    """Update a student's progress on a lesson."""
+    data = request.get_json()
+    
+    if not data or 'student_id' not in data:
+        return jsonify({'error': 'Missing required field: student_id'}), 400
+    
+    db = get_db()
+    lesson = db.execute('SELECT * FROM lessons WHERE id = ?', (lesson_id,)).fetchone()
+    if not lesson:
+        return jsonify({'error': 'Lesson not found'}), 404
+    
+    progress_id = f"progress-{hashlib.sha256((lesson_id + data['student_id']).encode()).hexdigest()[:12]}"
+    status = data.get('status', 'in_progress')
+    
+    # Validate status value
+    if status not in ['not_started', 'in_progress', 'completed']:
+        return jsonify({'error': 'Invalid status value. Must be: not_started, in_progress, or completed'}), 400
+    
+    # Validate score if provided
+    score = data.get('score')
+    if score is not None:
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Score must be a number between 0 and 100'}), 400
+        if score < 0 or score > 100:
+            return jsonify({'error': 'Score must be between 0 and 100'}), 400
+    
+    notes = data.get('notes', '')
+    completed_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') if status == 'completed' else None
+    
+    try:
+        db.execute(
+            'INSERT INTO lesson_progress (id, lesson_id, student_id, status, score, completed_at, notes) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?) '
+            'ON CONFLICT(lesson_id, student_id) DO UPDATE SET status = ?, score = ?, completed_at = ?, notes = ?',
+            (progress_id, lesson_id, data['student_id'], status, score, completed_at, notes,
+             status, score, completed_at, notes)
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Progress updated',
+            'lesson_id': lesson_id,
+            'student_id': data['student_id'],
+            'status': status
+        })
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Failed to update progress'}), 500
+
+
+@app.route('/api/students/<student_id>/progress', methods=['GET'])
+def get_student_progress(student_id):
+    """Get all lesson progress for a student."""
+    db = get_db()
+    progress = db.execute(
+        'SELECT lp.*, l.title, l.subject_area, l.classroom_id '
+        'FROM lesson_progress lp '
+        'JOIN lessons l ON lp.lesson_id = l.id '
+        'WHERE lp.student_id = ? '
+        'ORDER BY lp.created_at DESC',
+        (student_id,)
+    ).fetchall()
+    
+    result = []
+    for p in progress:
+        result.append({
+            'lesson_id': p['lesson_id'],
+            'lesson_title': p['title'],
+            'subject_area': p['subject_area'],
+            'classroom_id': p['classroom_id'],
+            'status': p['status'],
+            'score': p['score'],
+            'completed_at': p['completed_at'],
+            'notes': p['notes']
+        })
+    
+    return jsonify({'student_id': student_id, 'progress': result})
+
+
+# ============================================================================
+# Science Demonstrations - Visual Teaching Aids
+# ============================================================================
+
+@app.route('/api/demonstrations', methods=['GET'])
+def get_demonstrations():
+    """Get all available science demonstrations for teaching."""
+    category = request.args.get('category')
+    
+    db = get_db()
+    if category:
+        demonstrations = db.execute(
+            'SELECT * FROM demonstrations WHERE category = ? ORDER BY name',
+            (category,)
+        ).fetchall()
+    else:
+        demonstrations = db.execute('SELECT * FROM demonstrations ORDER BY category, name').fetchall()
+    
+    result = []
+    for demo in demonstrations:
+        result.append({
+            'id': demo['id'],
+            'name': demo['name'],
+            'category': demo['category'],
+            'description': demo['description'],
+            'visualization_type': demo['visualization_type'],
+            'parameters': json.loads(demo['parameters_json']) if demo['parameters_json'] else {},
+            'educational_notes': demo['educational_notes'],
+            'safety_notes': demo['safety_notes'],
+            'created_at': demo['created_at']
+        })
+    
+    return jsonify({'demonstrations': result})
+
+
+@app.route('/api/demonstrations', methods=['POST'])
+def create_demonstration():
+    """Create a new science demonstration for teaching."""
+    data = request.get_json()
+    
+    required = ['name', 'category', 'visualization_type']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    demo_id = f"demo-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
             'message': 'Element created',
             'id': element_id
         }), 201
@@ -1789,6 +2265,17 @@ def create_craftable():
     db = get_db()
     try:
         db.execute(
+            'INSERT INTO demonstrations (id, name, category, description, visualization_type, '
+            'parameters_json, educational_notes, safety_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                demo_id,
+                data['name'],
+                data['category'],
+                data.get('description', ''),
+                data['visualization_type'],
+                json.dumps(data.get('parameters', {})),
+                data.get('educational_notes', ''),
+                data.get('safety_notes', '')
             'INSERT INTO craftable_items (id, name, item_type, category, description, '
             'required_tools_json, required_elements_json, craft_time_seconds, effects_json, research_bonus) '
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -1807,6 +2294,504 @@ def create_craftable():
         )
         db.commit()
         return jsonify({
+            'message': 'Demonstration created',
+            'id': demo_id
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Demonstration already exists'}), 409
+
+
+@app.route('/api/demonstrations/<demo_id>/simulate', methods=['POST'])
+def simulate_demonstration(demo_id):
+    """
+    Simulate a science demonstration with given parameters.
+    Returns visualization data for rendering in-game.
+    """
+    data = request.get_json() or {}
+    
+    db = get_db()
+    demo = db.execute('SELECT * FROM demonstrations WHERE id = ?', (demo_id,)).fetchone()
+    
+    if not demo:
+        return jsonify({'error': 'Demonstration not found'}), 404
+    
+    # Simulate the demonstration based on type
+    simulation_result = _simulate_demonstration(
+        demo['visualization_type'],
+        demo['category'],
+        json.loads(demo['parameters_json']) if demo['parameters_json'] else {},
+        data.get('custom_parameters', {})
+    )
+    
+    return jsonify({
+        'demonstration_id': demo_id,
+        'name': demo['name'],
+        'category': demo['category'],
+        'visualization_type': demo['visualization_type'],
+        'simulation_result': simulation_result,
+        'educational_notes': demo['educational_notes'],
+        'safety_notes': demo['safety_notes']
+    })
+
+
+def _simulate_demonstration(viz_type, category, base_params, custom_params):
+    """
+    Simulate a science demonstration.
+    Returns data for visual rendering of scientific phenomena.
+
+    The returned dictionary structure varies depending on the `category` and `viz_type` parameters.
+
+    General schema:
+        {
+            ... (fields depend on simulation type) ...
+        }
+
+    Example return values:
+
+    Chemistry:
+        - Combustion:
+            {
+                "reaction": "combustion",
+                "reactants": [...],
+                "products": [...],
+                "energy_released": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Reaction:
+            {
+                "reaction": str,
+                "reactants": [...],
+                "products": [...],
+                "rate": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Molecular Structure:
+            {
+                "molecule": str,
+                "atoms": [...],
+                "bonds": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Physics:
+        - Wave:
+            {
+                "wave_type": str,
+                "amplitude": float,
+                "frequency": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Particle:
+            {
+                "particle": str,
+                "trajectory": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Electromagnetic:
+            {
+                "field_type": str,
+                "strength": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Biology:
+        - Cell Division:
+            {
+                "process": "cell_division",
+                "stages": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - DNA Replication:
+            {
+                "process": "dna_replication",
+                "steps": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Protein Synthesis:
+            {
+                "process": "protein_synthesis",
+                "steps": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Default:
+        {
+            "type": viz_type,
+            "status": "simulated",
+            "parameters_used": {...},
+            "timestamp": str
+        }
+
+    Returns:
+        dict: Simulation result data for the requested demonstration.
+    """
+    params = {**base_params, **custom_params}
+    
+    # Chemistry demonstrations
+    if category == 'chemistry':
+        if viz_type == 'combustion':
+            return _simulate_combustion(params)
+        elif viz_type == 'reaction':
+            return _simulate_chemical_reaction(params)
+        elif viz_type == 'molecular_structure':
+            return _simulate_molecular_structure(params)
+    
+    # Physics demonstrations
+    elif category == 'physics':
+        if viz_type == 'wave':
+            return _simulate_wave(params)
+        elif viz_type == 'particle':
+            return _simulate_particle_motion(params)
+        elif viz_type == 'electromagnetic':
+            return _simulate_electromagnetic(params)
+    
+    # Biology demonstrations
+    elif category == 'biology':
+        if viz_type == 'cell_division':
+            return _simulate_cell_division(params)
+        elif viz_type == 'dna_replication':
+            return _simulate_dna_replication(params)
+        elif viz_type == 'protein_synthesis':
+            return _simulate_protein_synthesis(params)
+    
+    # Default generic simulation
+    return {
+        'type': viz_type,
+        'status': 'simulated',
+        'parameters_used': params,
+        'timestamp': datetime.utcnow().isoformat()
+    }
+
+
+def _simulate_combustion(params):
+    """Simulate combustion reaction for chemistry education."""
+    fuel = params.get('fuel', 'methane')
+    oxygen_ratio = params.get('oxygen_ratio', 2.0)
+    temperature = params.get('initial_temperature', 25)
+    
+    # Simulate combustion products and energy
+    combustion_data = {
+        'methane': {'formula': 'CH4 + 2O2 → CO2 + 2H2O', 'energy_kj': 890, 'flame_color': 'blue'},
+        'propane': {'formula': 'C3H8 + 5O2 → 3CO2 + 4H2O', 'energy_kj': 2220, 'flame_color': 'blue-yellow'},
+        'wood': {'formula': 'C6H10O5 + 6O2 → 6CO2 + 5H2O', 'energy_kj': 2500, 'flame_color': 'orange-yellow'},
+        'hydrogen': {'formula': '2H2 + O2 → 2H2O', 'energy_kj': 572, 'flame_color': 'pale-blue'}
+    }
+    
+    fuel_data = combustion_data.get(fuel, combustion_data['methane'])
+    
+    return {
+        'type': 'combustion',
+        'fuel': fuel,
+        'chemical_equation': fuel_data['formula'],
+        'energy_released_kj': fuel_data['energy_kj'],
+        'flame_color': fuel_data['flame_color'],
+        'oxygen_ratio': oxygen_ratio,
+        'initial_temperature_c': temperature,
+        'final_temperature_c': temperature + random.randint(800, 1200),
+        'products': ['CO2', 'H2O'],
+        'visualization_frames': _generate_combustion_frames(fuel_data),
+        'learning_points': [
+            'Combustion requires fuel, oxygen, and heat (fire triangle)',
+            'Complete combustion produces CO2 and H2O',
+            'Energy is released as heat and light',
+            'Different fuels produce different flame colors'
+        ]
+    }
+
+
+def _generate_combustion_frames(fuel_data):
+    """Generate animation frames for combustion visualization."""
+    frames = []
+    for i in range(10):
+        intensity = (i + 1) / 10.0
+        frames.append({
+            'frame': i,
+            'flame_intensity': intensity,
+            'particle_count': int(100 * intensity),
+            'temperature_ratio': intensity,
+            'color': fuel_data['flame_color']
+        })
+    return frames
+
+
+def _simulate_chemical_reaction(params):
+    """Simulate a generic chemical reaction."""
+    reactants = params.get('reactants', ['HCl', 'NaOH'])
+    
+    return {
+        'type': 'chemical_reaction',
+        'reactants': reactants,
+        'products': ['NaCl', 'H2O'] if 'HCl' in reactants else ['Products'],
+        'reaction_type': 'neutralization' if 'HCl' in reactants and 'NaOH' in reactants else 'synthesis',
+        'is_exothermic': random.choice([True, False]),
+        'visualization_steps': [
+            {'step': 1, 'description': 'Reactants mixing', 'visual': 'particle_approach'},
+            {'step': 2, 'description': 'Bond breaking', 'visual': 'bond_break'},
+            {'step': 3, 'description': 'New bonds forming', 'visual': 'bond_form'},
+            {'step': 4, 'description': 'Products formed', 'visual': 'product_display'}
+        ]
+    }
+
+
+def _simulate_molecular_structure(params):
+    """Simulate molecular structure visualization."""
+    molecule = params.get('molecule', 'H2O')
+    
+    structures = {
+        'H2O': {'atoms': [{'type': 'O', 'x': 0, 'y': 0, 'z': 0}, 
+                         {'type': 'H', 'x': 0.96, 'y': 0, 'z': 0},
+                         {'type': 'H', 'x': -0.24, 'y': 0.93, 'z': 0}],
+                'bonds': [[0, 1], [0, 2]], 'angle': 104.5},
+        'CO2': {'atoms': [{'type': 'C', 'x': 0, 'y': 0, 'z': 0},
+                         {'type': 'O', 'x': -1.16, 'y': 0, 'z': 0},
+                         {'type': 'O', 'x': 1.16, 'y': 0, 'z': 0}],
+                'bonds': [[0, 1], [0, 2]], 'angle': 180},
+        'CH4': {'atoms': [{'type': 'C', 'x': 0, 'y': 0, 'z': 0},
+                         {'type': 'H', 'x': 0.63, 'y': 0.63, 'z': 0.63},
+                         {'type': 'H', 'x': -0.63, 'y': -0.63, 'z': 0.63},
+                         {'type': 'H', 'x': -0.63, 'y': 0.63, 'z': -0.63},
+                         {'type': 'H', 'x': 0.63, 'y': -0.63, 'z': -0.63}],
+                'bonds': [[0, 1], [0, 2], [0, 3], [0, 4]], 'angle': 109.5}
+    }
+    
+    return {
+        'type': 'molecular_structure',
+        'molecule': molecule,
+        'structure': structures.get(molecule, structures['H2O']),
+        'rotation_enabled': True
+    }
+
+
+def _simulate_wave(params):
+    """Simulate wave physics visualization."""
+    wave_type = params.get('wave_type', 'transverse')
+    frequency = params.get('frequency', 1.0)
+    amplitude = params.get('amplitude', 1.0)
+    
+    return {
+        'type': 'wave',
+        'wave_type': wave_type,
+        'frequency_hz': frequency,
+        'amplitude': amplitude,
+        'wavelength': 1.0 / frequency if frequency > 0 else 1.0,
+        'points': [{'x': i * 0.1, 'y': amplitude * (0.5 + 0.5 * (-1 if i % 2 else 1))} for i in range(20)]
+    }
+
+
+def _simulate_particle_motion(params):
+    """
+    Simulate particle motion for physics education.
+    
+    Parameters:
+        params (dict): Simulation parameters. May include:
+            - particle_count (int): Number of particles (default: 50).
+            - temperature (float): Temperature in Kelvin (default: 300).
+            - particle_mass (float): Mass of each particle in kg 
+              (default: 1.67e-27, hydrogen/proton mass).
+    
+    By default, simulates hydrogen gas (proton mass = 1.67e-27 kg).
+    To simulate other gases, provide 'particle_mass' in params.
+    """
+    particle_count = params.get('particle_count', 50)
+    temperature = params.get('temperature', 300)
+    particle_mass = params.get('particle_mass', 1.67e-27)  # kg, default: hydrogen/proton mass
+    
+    # Calculate average velocity using kinetic theory of gases:
+    # v_avg = sqrt(3 * k_B * T / m)
+    # where k_B = 1.38e-23 J/K (Boltzmann constant)
+    boltzmann_constant = 1.38e-23  # J/K
+    average_velocity = (3 * boltzmann_constant * temperature / particle_mass) ** 0.5
+    
+    # Limit to 100 particles for performance in web visualization
+    max_particles = min(particle_count, 100)
+    
+    return {
+        'type': 'particle_motion',
+        'particle_count': particle_count,
+        'temperature_k': temperature,
+        'particle_mass_kg': particle_mass,
+        'average_velocity': average_velocity,
+        'particles': [{'id': i, 'x': random.random(), 'y': random.random(), 
+                       'vx': random.gauss(0, 1), 'vy': random.gauss(0, 1)} 
+                      for i in range(max_particles)]
+    }
+
+
+def _simulate_electromagnetic(params):
+    """Simulate electromagnetic phenomena."""
+    em_type = params.get('em_type', 'visible_light')
+    
+    spectrum = {
+        'radio': {'wavelength_m': 1e3, 'frequency_hz': 3e5, 'color': 'none'},
+        'microwave': {'wavelength_m': 1e-2, 'frequency_hz': 3e10, 'color': 'none'},
+        'infrared': {'wavelength_m': 1e-5, 'frequency_hz': 3e13, 'color': 'none'},
+        'visible_light': {'wavelength_m': 5e-7, 'frequency_hz': 6e14, 'color': 'rainbow'},
+        'ultraviolet': {'wavelength_m': 1e-8, 'frequency_hz': 3e16, 'color': 'purple'},
+        'xray': {'wavelength_m': 1e-10, 'frequency_hz': 3e18, 'color': 'none'},
+        'gamma': {'wavelength_m': 1e-12, 'frequency_hz': 3e20, 'color': 'none'}
+    }
+    
+    return {
+        'type': 'electromagnetic',
+        'em_type': em_type,
+        'properties': spectrum.get(em_type, spectrum['visible_light']),
+        'speed': 3e8,
+        'visualization': 'wave_propagation'
+    }
+
+
+def _simulate_cell_division(params):
+    """Simulate cell division (mitosis) for biology education."""
+    division_type = params.get('division_type', 'mitosis')
+    
+    return {
+        'type': 'cell_division',
+        'division_type': division_type,
+        'phases': [
+            {'name': 'Interphase', 'description': 'Cell prepares for division, DNA replicates'},
+            {'name': 'Prophase', 'description': 'Chromosomes condense, nuclear envelope breaks down'},
+            {'name': 'Metaphase', 'description': 'Chromosomes align at cell center'},
+            {'name': 'Anaphase', 'description': 'Sister chromatids separate'},
+            {'name': 'Telophase', 'description': 'Nuclear envelopes reform'},
+            {'name': 'Cytokinesis', 'description': 'Cell divides into two daughter cells'}
+        ],
+        'chromosome_count': 46 if division_type == 'mitosis' else 23,
+        'result_cells': 2 if division_type == 'mitosis' else 4
+    }
+
+
+def _simulate_dna_replication(params):
+    """Simulate DNA replication for biology education."""
+    return {
+        'type': 'dna_replication',
+        'steps': [
+            {'name': 'Helicase', 'action': 'Unwinds DNA double helix'},
+            {'name': 'Primase', 'action': 'Creates RNA primers'},
+            {'name': 'DNA Polymerase III', 'action': 'Synthesizes new DNA strands'},
+            {'name': 'DNA Polymerase I', 'action': 'Replaces RNA primers with DNA'},
+            {'name': 'Ligase', 'action': 'Joins DNA fragments'}
+        ],
+        'direction': "5' to 3'",
+        'leading_strand': 'continuous synthesis',
+        'lagging_strand': 'Okazaki fragments'
+    }
+
+
+def _simulate_protein_synthesis(params):
+    """Simulate protein synthesis for biology education."""
+    return {
+        'type': 'protein_synthesis',
+        'stages': [
+            {
+                'name': 'Transcription',
+                'location': 'Nucleus',
+                'steps': ['DNA unwinds', 'mRNA synthesized', 'mRNA exits nucleus']
+            },
+            {
+                'name': 'Translation',
+                'location': 'Ribosome',
+                'steps': ['mRNA binds to ribosome', 'tRNA brings amino acids', 'Polypeptide chain forms']
+            }
+        ],
+        'components': ['DNA', 'mRNA', 'tRNA', 'Ribosome', 'Amino acids']
+    }
+
+
+def _seed_default_demonstrations():
+    """Seed the database with default science demonstrations."""
+    demonstrations = [
+        {
+            'id': 'demo-combustion-basic',
+            'name': 'Basic Combustion',
+            'category': 'chemistry',
+            'description': 'Demonstrates the combustion reaction with different fuels',
+            'visualization_type': 'combustion',
+            'parameters_json': json.dumps({'fuel': 'methane', 'oxygen_ratio': 2.0}),
+            'educational_notes': 'Shows the fire triangle (fuel, oxygen, heat) and products of combustion',
+            'safety_notes': 'Virtual demonstration only - do not attempt with real fire'
+        },
+        {
+            'id': 'demo-acid-base',
+            'name': 'Acid-Base Neutralization',
+            'category': 'chemistry',
+            'description': 'Demonstrates neutralization reaction between acid and base',
+            'visualization_type': 'reaction',
+            'parameters_json': json.dumps({'reactants': ['HCl', 'NaOH']}),
+            'educational_notes': 'Shows how acids and bases neutralize to form salt and water',
+            'safety_notes': 'Virtual demonstration - in real labs, use appropriate PPE'
+        },
+        {
+            'id': 'demo-water-molecule',
+            'name': 'Water Molecule Structure',
+            'category': 'chemistry',
+            'description': '3D visualization of water molecule structure',
+            'visualization_type': 'molecular_structure',
+            'parameters_json': json.dumps({'molecule': 'H2O'}),
+            'educational_notes': 'Shows the bent shape of water and explains its unique properties',
+            'safety_notes': 'None'
+        },
+        {
+            'id': 'demo-light-waves',
+            'name': 'Light Wave Properties',
+            'category': 'physics',
+            'description': 'Visualizes electromagnetic waves and light properties',
+            'visualization_type': 'electromagnetic',
+            'parameters_json': json.dumps({'em_type': 'visible_light'}),
+            'educational_notes': 'Demonstrates wave-particle duality and the electromagnetic spectrum',
+            'safety_notes': 'None'
+        },
+        {
+            'id': 'demo-gas-particles',
+            'name': 'Gas Particle Motion',
+            'category': 'physics',
+            'description': 'Shows kinetic theory of gases with particle visualization',
+            'visualization_type': 'particle',
+            'parameters_json': json.dumps({'particle_count': 50, 'temperature': 300}),
+            'educational_notes': 'Demonstrates relationship between temperature and particle velocity',
+            'safety_notes': 'None'
+        },
+        {
+            'id': 'demo-cell-mitosis',
+            'name': 'Cell Division (Mitosis)',
+            'category': 'biology',
+            'description': 'Step-by-step visualization of mitosis',
+            'visualization_type': 'cell_division',
+            'parameters_json': json.dumps({'division_type': 'mitosis'}),
+            'educational_notes': 'Shows all phases of mitosis with chromosome behavior',
+            'safety_notes': 'None'
+        },
+        {
+            'id': 'demo-dna-replication',
+            'name': 'DNA Replication',
+            'category': 'biology',
+            'description': 'Animation of DNA replication process',
+            'visualization_type': 'dna_replication',
+            'parameters_json': json.dumps({}),
+            'educational_notes': 'Shows enzymes involved and mechanism of semi-conservative replication',
+            'safety_notes': 'None'
+        },
+        {
+            'id': 'demo-protein-synthesis',
+            'name': 'Protein Synthesis',
+            'category': 'biology',
+            'description': 'From DNA to protein - transcription and translation',
+            'visualization_type': 'protein_synthesis',
+            'parameters_json': json.dumps({}),
+            'educational_notes': 'Demonstrates the central dogma of molecular biology',
+            'safety_notes': 'None'
+        }
+    ]
+    
+    return demonstrations
             'message': 'Craftable item created',
             'id': item_id,
             'category': data['category']
@@ -2207,6 +3192,20 @@ if __name__ == '__main__':
     # Initialize database on startup if needed
     with app.app_context():
         init_db()
+        # Seed default demonstrations if empty
+        db = get_db()
+        demo_count = db.execute('SELECT COUNT(*) FROM demonstrations').fetchone()[0]
+        if demo_count == 0:
+            demos = _seed_default_demonstrations()
+            for demo in demos:
+                db.execute(
+                    'INSERT OR IGNORE INTO demonstrations (id, name, category, description, visualization_type, '
+                    'parameters_json, educational_notes, safety_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    (demo['id'], demo['name'], demo['category'], demo['description'],
+                     demo['visualization_type'], demo['parameters_json'],
+                     demo['educational_notes'], demo['safety_notes'])
+                )
+            db.commit()
     
     # Run development server
     # Debug mode controlled by environment variable (default: False for security)
