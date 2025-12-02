@@ -29,6 +29,16 @@ Production deployments should implement appropriate authentication mechanisms.
 - Market Orders
 - Courses
 
+### Phase 3: NPCs and World Interaction
+- NPCs (Randomized Fair Rewards)
+- Bartering System
+- Base Elements
+- Tools
+- Craftable Items (Jetpacks, Vehicles, Shelters)
+- Shelters and Camps
+- Disease Research Progress
+- Loot Tables
+
 ---
 
 ## Health Check
@@ -573,3 +583,560 @@ appropriate rate limiting.
 
 The API is currently at version 1.0.0. Version information is included in 
 the health check response.
+
+---
+
+## Phase 3: NPCs and World Interaction
+
+### NPCs (Randomized but Mathematically Fair Rewards)
+
+NPCs provide help, aid, information, tools, special files, NFTs, and coins through a mathematically balanced randomization system.
+
+#### GET /api/npcs
+
+List all NPCs with optional filtering.
+
+**Query Parameters**
+- `type` - Filter by NPC type (helper, merchant, information_giver, tool_giver, quest_giver, trainer, banker, researcher)
+- `role` - Filter by role (aid, trade, information, tools, special_files, nfts, coins, crafting, research)
+- `zone` - Filter by location zone
+
+**Response**
+
+```json
+{
+    "npcs": [
+        {
+            "id": "npc-abc123",
+            "name": "Dr. Research Helper",
+            "npc_type": "helper",
+            "role": "aid",
+            "location_zone": "lab_district",
+            "description": "A helpful research assistant",
+            "specialization": "protein_research",
+            "rarity": "rare",
+            "interaction_count": 42,
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+#### POST /api/npcs
+
+Create a new NPC.
+
+**Request Body**
+
+```json
+{
+    "name": "Dr. Research Helper",
+    "npc_type": "helper",
+    "role": "aid",
+    "location_zone": "lab_district",
+    "description": "A helpful research assistant",
+    "specialization": "protein_research",
+    "rarity": "rare",
+    "loot_table_id": "loot-abc123"
+}
+```
+
+**Valid NPC Types:** helper, merchant, information_giver, tool_giver, quest_giver, trainer, banker, researcher
+
+**Valid Roles:** aid, trade, information, tools, special_files, nfts, coins, crafting, research
+
+**Valid Rarities:** common, uncommon, rare, epic, legendary
+
+#### POST /api/npcs/:npc_id/interact
+
+Interact with an NPC to receive randomized but fair rewards.
+
+**Request Body**
+
+```json
+{
+    "player_id": "player-001",
+    "player_level": 5,
+    "player_luck": 1.2
+}
+```
+
+**Response**
+
+```json
+{
+    "interaction_id": "int-xyz789",
+    "npc": {
+        "id": "npc-abc123",
+        "name": "Dr. Research Helper",
+        "type": "helper",
+        "role": "aid"
+    },
+    "reward": {
+        "type": "aid",
+        "amount": 61.17,
+        "item": "protection_buff",
+        "item_id": "aid-86a1c8f4",
+        "rarity": "rare"
+    },
+    "message": "Dr. Research Helper provides you with protection_buff. 'Use this wisely, researcher.'"
+}
+```
+
+---
+
+### Bartering System
+
+Player-to-player and player-to-NPC trading through the bartering system.
+
+#### POST /api/barter/create
+
+Create a new barter transaction.
+
+**Request Body**
+
+```json
+{
+    "initiator_id": "player-001",
+    "recipient_id": "player-002",
+    "offered_items": [
+        {"item_id": "elem-001", "quantity": 5}
+    ],
+    "requested_items": [
+        {"item_id": "tool-001", "quantity": 1}
+    ]
+}
+```
+
+#### POST /api/barter/:barter_id/accept
+
+Accept a pending barter transaction.
+
+#### POST /api/barter/:barter_id/decline
+
+Decline a pending barter transaction.
+
+#### GET /api/barter
+
+Get barter transactions for a player.
+
+**Query Parameters**
+- `player_id` - Filter by player
+- `status` - Filter by status (pending, completed, declined)
+
+---
+
+### Base Elements
+
+Building blocks for crafting and research.
+
+#### GET /api/elements
+
+Get all base elements.
+
+**Response**
+
+```json
+{
+    "elements": [
+        {
+            "id": "elem-abc123",
+            "name": "Bio Carbon",
+            "element_type": "organic",
+            "rarity": "common",
+            "description": "Basic organic building block",
+            "properties": {"conductivity": 0.5},
+            "research_contribution": 0.5
+        }
+    ]
+}
+```
+
+#### POST /api/elements
+
+Create a new base element.
+
+**Request Body**
+
+```json
+{
+    "name": "Bio Carbon",
+    "element_type": "organic",
+    "rarity": "common",
+    "description": "Basic organic building block",
+    "properties": {"conductivity": 0.5},
+    "research_contribution": 0.5
+}
+```
+
+**Valid Element Types:** organic, inorganic, synthetic, biological, energy, catalyst, compound
+
+---
+
+### Tools
+
+Tools required for crafting advanced items.
+
+#### GET /api/tools
+
+Get all available tools.
+
+**Response**
+
+```json
+{
+    "tools": [
+        {
+            "id": "tool-abc123",
+            "name": "Molecular Assembler",
+            "tool_type": "crafting",
+            "tier": 2,
+            "description": "Advanced crafting tool",
+            "required_elements": ["Bio Carbon", "Energy Cell"],
+            "craft_time_seconds": 120,
+            "durability": 100
+        }
+    ]
+}
+```
+
+#### POST /api/tools
+
+Create a new tool definition.
+
+**Request Body**
+
+```json
+{
+    "name": "Molecular Assembler",
+    "tool_type": "crafting",
+    "tier": 2,
+    "description": "Advanced crafting tool",
+    "required_elements": ["Bio Carbon", "Energy Cell"],
+    "craft_time_seconds": 120,
+    "durability": 100
+}
+```
+
+**Valid Tool Types:** harvesting, crafting, research, construction, transport, defense, utility
+
+---
+
+### Craftable Items
+
+Advanced items including jetpacks, vehicles, shelters, and equipment.
+
+#### GET /api/craftables
+
+Get all craftable items with optional category filter.
+
+**Query Parameters**
+- `category` - Filter by category (transport, shelter, equipment, weapon, utility, research)
+
+**Response**
+
+```json
+{
+    "craftables": [
+        {
+            "id": "craft-abc123",
+            "name": "Basic Jetpack",
+            "item_type": "jetpack",
+            "category": "transport",
+            "description": "A basic jetpack for short flights",
+            "required_tools": ["Molecular Assembler"],
+            "required_elements": ["Bio Carbon", "Energy Cell", "Propulsion Core"],
+            "craft_time_seconds": 600,
+            "effects": {"flight_duration": 30, "max_altitude": 100},
+            "research_bonus": 0.15
+        }
+    ]
+}
+```
+
+#### POST /api/craftables
+
+Create a new craftable item definition.
+
+**Request Body**
+
+```json
+{
+    "name": "Basic Jetpack",
+    "item_type": "jetpack",
+    "category": "transport",
+    "description": "A basic jetpack for short flights",
+    "required_tools": ["Molecular Assembler"],
+    "required_elements": ["Bio Carbon", "Energy Cell", "Propulsion Core"],
+    "craft_time_seconds": 600,
+    "effects": {"flight_duration": 30, "max_altitude": 100},
+    "research_bonus": 0.15
+}
+```
+
+**Valid Categories:** transport, shelter, equipment, weapon, utility, research
+
+**Valid Item Types:** jetpack, flight_suit, car, motorcycle, boat, shelter, camp, outpost, lab_extension, armor, scanner, communicator, container
+
+#### POST /api/craft
+
+Craft an item using collected tools and elements.
+
+**Request Body**
+
+```json
+{
+    "player_id": "player-001",
+    "craftable_id": "craft-abc123"
+}
+```
+
+**Response**
+
+```json
+{
+    "message": "Item crafted successfully",
+    "player_item_id": "pitem-xyz789",
+    "item": {
+        "id": "craft-abc123",
+        "name": "Basic Jetpack",
+        "category": "transport",
+        "effects": {"flight_duration": 30, "max_altitude": 100}
+    },
+    "craft_time_seconds": 600,
+    "research_bonus": 0.15
+}
+```
+
+---
+
+### Shelters and Camps
+
+Player-built structures providing research bonuses and storage.
+
+#### GET /api/shelters
+
+Get player shelters.
+
+**Query Parameters**
+- `player_id` - Filter by player
+
+**Response**
+
+```json
+{
+    "shelters": [
+        {
+            "id": "shelter-abc123",
+            "player_id": "player-001",
+            "name": "Research Outpost Alpha",
+            "shelter_type": "research_station",
+            "location": {"x": 100.0, "y": 200.0, "z": 50.0},
+            "capacity": 4,
+            "research_bonus": 0.3,
+            "upgrades": [],
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+#### POST /api/shelters
+
+Create a new shelter or camp.
+
+**Request Body**
+
+```json
+{
+    "player_id": "player-001",
+    "name": "Research Outpost Alpha",
+    "shelter_type": "research_station",
+    "location": {"x": 100.0, "y": 200.0, "z": 50.0},
+    "capacity": 6,
+    "upgrades": []
+}
+```
+
+**Valid Shelter Types:** tent, cabin, outpost, research_station, mobile_lab, underground_bunker, treehouse, floating_platform
+
+**Research Bonuses by Type:**
+- tent: 0.05
+- cabin: 0.10
+- outpost: 0.15
+- research_station: 0.30
+- mobile_lab: 0.25
+- underground_bunker: 0.20
+- treehouse: 0.10
+- floating_platform: 0.15
+
+---
+
+### Disease Research Progress
+
+Track player contributions to disease research with unique build bonuses.
+
+#### GET /api/research-progress
+
+Get disease research progress.
+
+**Query Parameters**
+- `disease_id` - Filter by disease
+- `player_id` - Filter by player
+
+**Response**
+
+```json
+{
+    "progress": [
+        {
+            "id": "prog-abc123",
+            "disease_id": "disease-001",
+            "player_id": "player-001",
+            "contribution_amount": 10.0,
+            "contribution_type": "standard",
+            "unique_build_bonus": 9.2,
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ],
+    "total_contribution": 19.2
+}
+```
+
+#### POST /api/research-progress
+
+Add a research contribution with optional unique build bonus.
+
+**Request Body**
+
+```json
+{
+    "disease_id": "disease-001",
+    "player_id": "player-001",
+    "contribution_amount": 10.0,
+    "contribution_type": "standard",
+    "elements_used": ["organic", "catalyst", "biological"]
+}
+```
+
+**Unique Build Bonus System:**
+
+Creative combinations of base elements provide research bonuses:
+- Using multiple elements provides base bonus (0.5 per element)
+- Synergy combinations provide additional bonuses:
+  - organic + catalyst: +2.0
+  - biological + synthetic: +3.0
+  - energy + compound: +2.5
+  - organic + biological + catalyst: +5.0
+  - synthetic + energy + compound: +4.0
+
+---
+
+### Loot Tables
+
+Configure mathematically fair reward distributions.
+
+#### GET /api/loot-tables
+
+Get all loot tables.
+
+**Response**
+
+```json
+{
+    "loot_tables": [
+        {
+            "id": "loot-abc123",
+            "name": "NPC Reward Table",
+            "description": "Standard reward distribution",
+            "entries": [
+                {"item": "coins", "item_type": "currency", "weight": 50, "rarity": "common", "min_amount": 1, "max_amount": 10},
+                {"item": "basic_tool", "item_type": "tool", "weight": 30, "rarity": "uncommon", "min_amount": 1, "max_amount": 1},
+                {"item": "rare_element", "item_type": "element", "weight": 15, "rarity": "rare", "min_amount": 1, "max_amount": 3},
+                {"item": "legendary_nft", "item_type": "nft", "weight": 5, "rarity": "legendary", "min_amount": 1, "max_amount": 1}
+            ],
+            "total_weight": 100,
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+#### POST /api/loot-tables
+
+Create a new loot table.
+
+**Request Body**
+
+```json
+{
+    "name": "NPC Reward Table",
+    "description": "Standard reward distribution",
+    "entries": [
+        {"item": "coins", "item_type": "currency", "weight": 50, "rarity": "common", "min_amount": 1, "max_amount": 10},
+        {"item": "basic_tool", "item_type": "tool", "weight": 30, "rarity": "uncommon", "min_amount": 1, "max_amount": 1},
+        {"item": "rare_element", "item_type": "element", "weight": 15, "rarity": "rare", "min_amount": 1, "max_amount": 3},
+        {"item": "legendary_nft", "item_type": "nft", "weight": 5, "rarity": "legendary", "min_amount": 1, "max_amount": 1}
+    ]
+}
+```
+
+#### POST /api/loot-tables/:table_id/roll
+
+Roll on a loot table to get a random but fair reward.
+
+**Request Body**
+
+```json
+{
+    "player_luck": 1.5
+}
+```
+
+**Response**
+
+```json
+{
+    "loot_table_id": "loot-abc123",
+    "result": {
+        "item": "rare_element",
+        "item_type": "element",
+        "rarity": "rare",
+        "amount": 2
+    },
+    "message": "You received 2x rare_element (rare)"
+}
+```
+
+---
+
+## Mathematical Fairness System
+
+The NPC reward system uses mathematically fair algorithms to ensure game balance:
+
+### Weighted Random Selection
+- Each item has a weight determining its probability
+- Total weight is calculated as sum of all entry weights
+- Selection probability = item_weight / total_weight
+
+### Player Luck Modifier
+- Base luck is 1.0
+- Luck values above 1.0 increase the effective weight of rare+ items (capped at 2x)
+- Luck has diminishing returns to prevent exploitation
+
+### Reward Calculation Formula
+```
+base_reward = base_value × rarity_multiplier
+variance = random(0.8, 1.2)
+level_bonus = log(player_level + 1) × 0.5
+final_reward = base_reward × variance × (1 + level_bonus)
+```
+
+### Rarity Multipliers
+| Rarity | Multiplier |
+|--------|------------|
+| Common | 1.0× |
+| Uncommon | 1.5× |
+| Rare | 2.5× |
+| Epic | 4.0× |
+| Legendary | 7.5× |
