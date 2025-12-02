@@ -2338,6 +2338,101 @@ def _simulate_demonstration(viz_type, category, base_params, custom_params):
     """
     Simulate a science demonstration.
     Returns data for visual rendering of scientific phenomena.
+
+    The returned dictionary structure varies depending on the `category` and `viz_type` parameters.
+
+    General schema:
+        {
+            ... (fields depend on simulation type) ...
+        }
+
+    Example return values:
+
+    Chemistry:
+        - Combustion:
+            {
+                "reaction": "combustion",
+                "reactants": [...],
+                "products": [...],
+                "energy_released": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Reaction:
+            {
+                "reaction": str,
+                "reactants": [...],
+                "products": [...],
+                "rate": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Molecular Structure:
+            {
+                "molecule": str,
+                "atoms": [...],
+                "bonds": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Physics:
+        - Wave:
+            {
+                "wave_type": str,
+                "amplitude": float,
+                "frequency": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Particle:
+            {
+                "particle": str,
+                "trajectory": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Electromagnetic:
+            {
+                "field_type": str,
+                "strength": float,
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Biology:
+        - Cell Division:
+            {
+                "process": "cell_division",
+                "stages": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - DNA Replication:
+            {
+                "process": "dna_replication",
+                "steps": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+        - Protein Synthesis:
+            {
+                "process": "protein_synthesis",
+                "steps": [...],
+                "parameters_used": {...},
+                "timestamp": str
+            }
+
+    Default:
+        {
+            "type": viz_type,
+            "status": "simulated",
+            "parameters_used": {...},
+            "timestamp": str
+        }
+
+    Returns:
+        dict: Simulation result data for the requested demonstration.
     """
     params = {**base_params, **custom_params}
     
