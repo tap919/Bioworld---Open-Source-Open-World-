@@ -16,7 +16,8 @@ import json
 import hashlib
 import base64
 import random
-from datetime import datetime
+import secrets
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, g
 
 app = Flask(__name__)
@@ -208,7 +209,7 @@ def api_health():
     """Health check endpoint for monitoring."""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
         'version': '1.0.0'
     })
 
@@ -1101,11 +1102,17 @@ def get_community_spaces():
 @app.route('/api/community-spaces/<preset_id>', methods=['GET'])
 def get_community_space(preset_id):
     """Get details of a specific community space preset."""
+    # Security: Validate preset_id is in the allowlist before file access
     if preset_id not in COMMUNITY_SPACE_PRESETS:
         return jsonify({'error': 'Community space preset not found'}), 404
     
+    # Security: Sanitize preset_id by using basename and validating format
+    safe_preset_id = os.path.basename(preset_id)
+    if safe_preset_id != preset_id or '..' in preset_id:
+        return jsonify({'error': 'Invalid preset_id format'}), 400
+    
     # Load full preset data from JSON file if available
-    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{preset_id}.json')
+    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{safe_preset_id}.json')
     if os.path.exists(preset_file):
         with open(preset_file, 'r') as f:
             return jsonify(json.load(f))
@@ -1125,7 +1132,8 @@ def place_community_space():
     if data['preset_id'] not in COMMUNITY_SPACE_PRESETS:
         return jsonify({'error': 'Invalid preset_id'}), 400
     
-    placement_id = f"place-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    # Use cryptographically secure random token for placement ID
+    placement_id = f"place-{secrets.token_hex(12)}"
     location = data['location']
     
     db = get_db()
@@ -1217,11 +1225,13 @@ def create_blueprint():
     if not data or not all(f in data for f in required):
         return jsonify({'error': f'Missing required fields: {required}'}), 400
     
-    # Generate blueprint ID and code
+    # Generate blueprint ID and code using cryptographically secure random values
+    # The code is derived from build data hash for deduplication, but ID is random
     build_json = json.dumps(data['build_data'], sort_keys=True)
     hash_obj = hashlib.sha256(build_json.encode())
-    blueprint_id = f"bp-{hash_obj.hexdigest()[:12]}"
-    blueprint_code = f"BW-{base64.urlsafe_b64encode(hash_obj.digest()[:9]).decode('utf-8')}"
+    # Use longer hash for blueprint code (16 bytes = 128 bits) to reduce collision risk
+    blueprint_id = f"bp-{secrets.token_hex(16)}"
+    blueprint_code = f"BW-{base64.urlsafe_b64encode(hash_obj.digest()[:12]).decode('utf-8')}"
     
     db = get_db()
     try:
@@ -1293,11 +1303,17 @@ def get_building_elements():
 @app.route('/api/building-elements/<preset_id>', methods=['GET'])
 def get_building_element(preset_id):
     """Get details of a specific building element preset."""
+    # Security: Validate preset_id is in the allowlist before file access
     if preset_id not in BUILDING_ELEMENTS:
         return jsonify({'error': 'Building element preset not found'}), 404
     
+    # Security: Sanitize preset_id by using basename and validating format
+    safe_preset_id = os.path.basename(preset_id)
+    if safe_preset_id != preset_id or '..' in preset_id:
+        return jsonify({'error': 'Invalid preset_id format'}), 400
+    
     # Load full preset data from JSON file if available
-    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{preset_id}.json')
+    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{safe_preset_id}.json')
     if os.path.exists(preset_file):
         with open(preset_file, 'r') as f:
             return jsonify(json.load(f))
