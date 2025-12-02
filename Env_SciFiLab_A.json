@@ -1,0 +1,82 @@
+{
+  "preset_id": "Env_SciFiLab_A",
+  "seed": 889900,
+  "category": "community_space",
+  "description": "Futuristic science fiction themed laboratory for experimental research and creative projects.",
+  "budgets": {
+    "tri_max": 8500000,
+    "draw_calls_max": 1700,
+    "tex_pool_mb": 1300
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/SciFiLabBlock.hda",
+    "parms": {
+      "research_pods": 16,
+      "hologram_chambers": 4,
+      "simulation_rooms": 6,
+      "quantum_core": true,
+      "cryogenic_storage": true
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/SciFiProps",
+    "density": 0.32,
+    "slope_mask": [0, 20],
+    "height_mask": [0, 1200]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Console_SciFi_01",
+      "density": 0.18,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Pod_Research_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Hologram_Table_01",
+      "density": 0.08,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Tube_Cryo_01",
+      "density": 0.06,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Light_Neon_01",
+      "density": 0.15,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_SciFi_Master",
+    "params": {
+      "HueShift": -0.2,
+      "Roughness": 0.35,
+      "Emissive": 1.5
+    }
+  },
+  "substance": {
+    "graph": "Materials/SciFiMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "futuristic": 0.95,
+      "glow": 0.85
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "experimental_mode": true,
+    "creativity_bonus": 1.25,
+    "max_occupancy": 60
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "preset_id": "Env_Lounge_A",
+  "seed": 223344,
+  "category": "community_space",
+  "description": "Social gathering space for players to relax, network, and collaborate on projects.",
+  "budgets": {
+    "tri_max": 4000000,
+    "draw_calls_max": 900,
+    "tex_pool_mb": 700
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/LoungeBlock.hda",
+    "parms": {
+      "seating_clusters": 12,
+      "bar_area": true,
+      "game_corner": true,
+      "ambient_music": true
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/LoungeProps",
+    "density": 0.32,
+    "slope_mask": [0, 10],
+    "height_mask": [0, 400]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Sofa_Modern_01",
+      "density": 0.18,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Chair_Lounge_01",
+      "density": 0.22,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Coffee_Table_01",
+      "density": 0.15,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Plant_Indoor_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Lamp_Floor_01",
+      "density": 0.08,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Lounge_Master",
+    "params": {
+      "HueShift": 0.02,
+      "Roughness": 0.5,
+      "Emissive": 0.6
+    }
+  },
+  "substance": {
+    "graph": "Materials/LoungeMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "comfort": 0.8,
+      "warmth": 0.6
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "social_hub": true,
+    "max_occupancy": 50
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "preset_id": "Env_SportsLab_A",
+  "seed": 778899,
+  "category": "community_space",
+  "description": "Athletic facility for physical activities, competitions, and sports-based research.",
+  "budgets": {
+    "tri_max": 7500000,
+    "draw_calls_max": 1500,
+    "tex_pool_mb": 1100
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/SportsLabBlock.hda",
+    "parms": {
+      "main_court_size_m": 40.0,
+      "training_rooms": 8,
+      "locker_rooms": 4,
+      "spectator_seating": 200,
+      "equipment_room": true
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/SportsProps",
+    "density": 0.28,
+    "slope_mask": [0, 5],
+    "height_mask": [0, 1000]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Equipment_Gym_01",
+      "density": 0.15,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Bench_Sports_01",
+      "density": 0.12,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Scoreboard_01",
+      "density": 0.03,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Sports_Net_01",
+      "density": 0.05,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Locker_01",
+      "density": 0.2,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Sports_Master",
+    "params": {
+      "HueShift": 0.1,
+      "Roughness": 0.6,
+      "Emissive": 0.9
+    }
+  },
+  "substance": {
+    "graph": "Materials/SportsMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "athletic": 0.85,
+      "energy": 0.8
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "competition_mode": true,
+    "fitness_tracking": true,
+    "max_occupancy": 300
+  }
+}

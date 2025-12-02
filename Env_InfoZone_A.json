@@ -1,0 +1,81 @@
+{
+  "preset_id": "Env_InfoZone_A",
+  "seed": 556677,
+  "category": "community_space",
+  "description": "Information and resource center with databases, archives, and research terminals.",
+  "budgets": {
+    "tri_max": 5000000,
+    "draw_calls_max": 1000,
+    "tex_pool_mb": 800
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/InfoZoneBlock.hda",
+    "parms": {
+      "terminal_stations": 24,
+      "archive_racks": 50,
+      "hologram_displays": 8,
+      "quiet_study_pods": 16
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/InfoProps",
+    "density": 0.3,
+    "slope_mask": [0, 10],
+    "height_mask": [0, 500]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Terminal_Info_01",
+      "density": 0.2,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Hologram_Display_01",
+      "density": 0.08,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Data_Rack_01",
+      "density": 0.15,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Study_Pod_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Signage_Digital_01",
+      "density": 0.12,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_InfoZone_Master",
+    "params": {
+      "HueShift": -0.15,
+      "Roughness": 0.4,
+      "Emissive": 1.2
+    }
+  },
+  "substance": {
+    "graph": "Materials/InfoZoneMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "tech": 0.9,
+      "clarity": 0.8
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "database_access": true,
+    "research_bonus": 1.15,
+    "max_occupancy": 80
+  }
+}

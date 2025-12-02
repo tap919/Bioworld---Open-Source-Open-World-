@@ -1,0 +1,83 @@
+{
+  "preset_id": "Env_ModLab_A",
+  "seed": 990011,
+  "category": "community_space",
+  "description": "Modding and customization laboratory for players to create, modify, and share custom content.",
+  "budgets": {
+    "tri_max": 5500000,
+    "draw_calls_max": 1100,
+    "tex_pool_mb": 850
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/ModLabBlock.hda",
+    "parms": {
+      "workstations": 24,
+      "testing_chambers": 4,
+      "upload_terminals": 6,
+      "preview_screens": 12,
+      "collaboration_tables": 8
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/ModLabProps",
+    "density": 0.35,
+    "slope_mask": [0, 12],
+    "height_mask": [0, 600]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Workstation_Mod_01",
+      "density": 0.2,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Screen_Multi_01",
+      "density": 0.15,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_3D_Printer_01",
+      "density": 0.08,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Tool_Rack_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Storage_Bin_01",
+      "density": 0.12,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_ModLab_Master",
+    "params": {
+      "HueShift": 0.12,
+      "Roughness": 0.5,
+      "Emissive": 1.0
+    }
+  },
+  "substance": {
+    "graph": "Materials/ModLabMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "creative": 0.9,
+      "tech": 0.8
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "modding_tools": true,
+    "asset_upload": true,
+    "blueprint_sharing": true,
+    "max_occupancy": 50
+  }
+}

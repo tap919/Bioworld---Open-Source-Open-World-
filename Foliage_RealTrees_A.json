@@ -1,0 +1,121 @@
+{
+  "preset_id": "Foliage_RealTrees_A",
+  "seed": 242526,
+  "category": "creative_building",
+  "description": "Collection of real-world inspired trees for player-built forests, orchards, and landscaping.",
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "speedtree": {
+    "templates": [
+      "OakTree.sta",
+      "PineTree.sta",
+      "MapleTree.sta",
+      "AppleTree.sta",
+      "CherryBlossom.sta",
+      "Willow.sta",
+      "Palm.sta",
+      "Birch.sta"
+    ],
+    "count_per_type": 8
+  },
+  "pcg": {
+    "graph": "/PCG/RealTrees_Volume",
+    "density": 0.2,
+    "slope_mask": [0, 40],
+    "height_mask": [0, 1500]
+  },
+  "tree_types": [
+    {
+      "id": "tree_oak_01",
+      "mesh": "SM_Tree_Oak_01",
+      "category": "deciduous",
+      "growth_time_days": 7,
+      "yield": "oak_wood",
+      "height_m": 15.0,
+      "canopy_radius_m": 8.0
+    },
+    {
+      "id": "tree_pine_01",
+      "mesh": "SM_Tree_Pine_01",
+      "category": "conifer",
+      "growth_time_days": 6,
+      "yield": "pine_wood",
+      "height_m": 20.0,
+      "canopy_radius_m": 5.0
+    },
+    {
+      "id": "tree_maple_01",
+      "mesh": "SM_Tree_Maple_01",
+      "category": "deciduous",
+      "growth_time_days": 7,
+      "yield": "maple_wood",
+      "height_m": 12.0,
+      "canopy_radius_m": 7.0
+    },
+    {
+      "id": "tree_apple_01",
+      "mesh": "SM_Tree_Apple_01",
+      "category": "fruit",
+      "growth_time_days": 5,
+      "yield": "apple_fruit",
+      "height_m": 6.0,
+      "canopy_radius_m": 4.0
+    },
+    {
+      "id": "tree_cherry_01",
+      "mesh": "SM_Tree_Cherry_01",
+      "category": "ornamental",
+      "growth_time_days": 6,
+      "yield": "cherry_fruit",
+      "height_m": 8.0,
+      "canopy_radius_m": 5.0
+    },
+    {
+      "id": "tree_willow_01",
+      "mesh": "SM_Tree_Willow_01",
+      "category": "deciduous",
+      "growth_time_days": 8,
+      "yield": "willow_wood",
+      "height_m": 12.0,
+      "canopy_radius_m": 10.0
+    },
+    {
+      "id": "tree_palm_01",
+      "mesh": "SM_Tree_Palm_01",
+      "category": "tropical",
+      "growth_time_days": 6,
+      "yield": "coconut",
+      "height_m": 10.0,
+      "canopy_radius_m": 3.0
+    },
+    {
+      "id": "tree_birch_01",
+      "mesh": "SM_Tree_Birch_01",
+      "category": "deciduous",
+      "growth_time_days": 5,
+      "yield": "birch_wood",
+      "height_m": 14.0,
+      "canopy_radius_m": 4.0
+    }
+  ],
+  "materials": {
+    "master": "M_Tree_Master",
+    "params": {
+      "Subsurface": 0.45,
+      "WindIntensity": 0.7,
+      "SeasonalTint": 0.0,
+      "BarkRoughness": 0.8
+    }
+  },
+  "features": {
+    "player_placeable": true,
+    "growable": true,
+    "harvestable": true,
+    "seasonal_variation": true,
+    "wind_interaction": true,
+    "shadow_casting": true
+  }
+}

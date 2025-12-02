@@ -1,0 +1,127 @@
+{
+  "preset_id": "Build_RoadBuilder_A",
+  "seed": 272829,
+  "category": "creative_building",
+  "description": "Road construction toolkit for players to build paths, streets, highways, and infrastructure.",
+  "budgets": {
+    "tri_max": 2000000,
+    "draw_calls_max": 500,
+    "tex_pool_mb": 400
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/RoadBuilder.hda",
+    "parms": {
+      "spline_based": true,
+      "auto_terrain_blend": true,
+      "intersection_handling": true
+    }
+  },
+  "road_types": [
+    {
+      "id": "road_dirt_01",
+      "mesh": "SM_Road_Dirt_01",
+      "width_m": 4.0,
+      "material": "M_Road_Dirt",
+      "speed_modifier": 0.8,
+      "cost_per_meter": 5
+    },
+    {
+      "id": "road_gravel_01",
+      "mesh": "SM_Road_Gravel_01",
+      "width_m": 5.0,
+      "material": "M_Road_Gravel",
+      "speed_modifier": 0.9,
+      "cost_per_meter": 10
+    },
+    {
+      "id": "road_asphalt_01",
+      "mesh": "SM_Road_Asphalt_01",
+      "width_m": 6.0,
+      "material": "M_Road_Asphalt",
+      "speed_modifier": 1.0,
+      "cost_per_meter": 25
+    },
+    {
+      "id": "road_highway_01",
+      "mesh": "SM_Road_Highway_01",
+      "width_m": 12.0,
+      "material": "M_Road_Highway",
+      "speed_modifier": 1.2,
+      "cost_per_meter": 50
+    },
+    {
+      "id": "path_stone_01",
+      "mesh": "SM_Path_Stone_01",
+      "width_m": 2.0,
+      "material": "M_Path_Stone",
+      "speed_modifier": 0.85,
+      "cost_per_meter": 15
+    },
+    {
+      "id": "path_wood_01",
+      "mesh": "SM_Path_Wood_01",
+      "width_m": 2.5,
+      "material": "M_Path_Wood",
+      "speed_modifier": 0.9,
+      "cost_per_meter": 12
+    },
+    {
+      "id": "sidewalk_01",
+      "mesh": "SM_Sidewalk_01",
+      "width_m": 2.0,
+      "material": "M_Sidewalk",
+      "speed_modifier": 0.95,
+      "cost_per_meter": 8
+    },
+    {
+      "id": "bridge_01",
+      "mesh": "SM_Bridge_01",
+      "width_m": 6.0,
+      "material": "M_Bridge",
+      "speed_modifier": 1.0,
+      "cost_per_meter": 100
+    }
+  ],
+  "accessories": [
+    {
+      "id": "road_marking_01",
+      "mesh": "SM_Road_Marking_01",
+      "category": "marking"
+    },
+    {
+      "id": "road_barrier_01",
+      "mesh": "SM_Road_Barrier_01",
+      "category": "safety"
+    },
+    {
+      "id": "traffic_sign_01",
+      "mesh": "SM_Traffic_Sign_01",
+      "category": "signage"
+    },
+    {
+      "id": "crosswalk_01",
+      "mesh": "SM_Crosswalk_01",
+      "category": "marking"
+    }
+  ],
+  "materials": {
+    "master": "M_Road_Master",
+    "params": {
+      "Roughness": 0.75,
+      "WearLevel": 0.2,
+      "WetBlend": 0.0
+    }
+  },
+  "features": {
+    "player_placeable": true,
+    "spline_tool": true,
+    "terrain_conforming": true,
+    "intersection_auto": true,
+    "traffic_system_ready": true
+  }
+}

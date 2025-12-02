@@ -1,0 +1,140 @@
+{
+  "preset_id": "Build_CreativeToolkit_A",
+  "seed": 333435,
+  "category": "creative_building",
+  "description": "Master creative building toolkit enabling players to collaboratively design and develop the ecosystem from scratch.",
+  "version": "1.0.0",
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "toolkit_components": {
+    "community_spaces": [
+      "Env_School_A",
+      "Env_Lounge_A",
+      "Env_Auditorium_A",
+      "Env_TradingCenter_A",
+      "Env_InfoZone_A",
+      "Env_LearningLabKids_A",
+      "Env_SportsLab_A",
+      "Env_SciFiLab_A",
+      "Env_ModLab_A",
+      "Env_AutoShop_A",
+      "Env_TattooParlor_A",
+      "Env_FoodSeller_A",
+      "Env_MedicStation_A",
+      "Env_Mansion_A"
+    ],
+    "building_elements": [
+      "Foliage_RealPlants_A",
+      "Foliage_RealTrees_A",
+      "Build_RoadBuilder_A",
+      "Build_LightFixtures_A"
+    ],
+    "existing_presets": [
+      "Env_BioLab_A",
+      "Env_FuturisticLab_A",
+      "Env_Metropolis_HD_A",
+      "Env_Mountain_SpookyNight_A",
+      "Foliage_Wetlands_A",
+      "Streets_Min_A"
+    ]
+  },
+  "creative_modes": {
+    "sandbox": {
+      "description": "Full creative freedom with unlimited resources",
+      "resource_limit": false,
+      "build_anywhere": true,
+      "undo_enabled": true
+    },
+    "collaborative": {
+      "description": "Shared building with permission system",
+      "max_collaborators": 50,
+      "permission_levels": ["owner", "editor", "viewer"],
+      "version_control": true
+    },
+    "survival": {
+      "description": "Building with resource gathering requirements",
+      "resource_limit": true,
+      "gathering_required": true,
+      "durability_system": true
+    }
+  },
+  "placement_rules": {
+    "terrain_conforming": true,
+    "snap_to_grid": true,
+    "grid_size_m": 0.5,
+    "rotation_snap_degrees": 15,
+    "collision_detection": true,
+    "undo_steps": 50
+  },
+  "blueprint_system": {
+    "save_blueprints": true,
+    "share_blueprints": true,
+    "blueprint_code_format": "BW-{hash}",
+    "max_blueprint_size_mb": 10,
+    "public_gallery": true
+  },
+  "ecosystem_rules": {
+    "starting_state": "empty",
+    "player_driven_development": true,
+    "collaborative_voting": true,
+    "organic_growth": true,
+    "seasons_enabled": true,
+    "day_night_cycle": true,
+    "weather_effects": true
+  },
+  "progression_unlocks": {
+    "tier_1_starter": {
+      "unlocked_at_start": true,
+      "items": [
+        "light_torch_01",
+        "light_campfire_01",
+        "path_dirt_01",
+        "plant_basic_set"
+      ]
+    },
+    "tier_2_builder": {
+      "unlock_requirement": "complete_5_builds",
+      "items": [
+        "light_streetlamp_01",
+        "road_gravel_01",
+        "tree_basic_set",
+        "building_small_set"
+      ]
+    },
+    "tier_3_architect": {
+      "unlock_requirement": "collaborate_10_projects",
+      "items": [
+        "light_neon_01",
+        "road_asphalt_01",
+        "building_medium_set",
+        "community_space_set"
+      ]
+    },
+    "tier_4_master": {
+      "unlock_requirement": "earn_master_reputation",
+      "items": [
+        "all_lights",
+        "all_roads",
+        "all_buildings",
+        "mansion_set"
+      ]
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "blueprint_sharing": true,
+    "weekly_seed_support": true,
+    "community_voting": true,
+    "tutorial_mode": true,
+    "streamer_friendly": true
+  },
+  "documentation": {
+    "build_guide": "docs/BUILD_GUIDE.md",
+    "api_reference": "docs/API.md",
+    "tutorial_path": "/tutorials/creative_building/"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "preset_id": "Env_Mansion_A",
+  "seed": 181920,
+  "category": "community_space",
+  "description": "Large luxury residence for player housing, guild headquarters, or social events.",
+  "budgets": {
+    "tri_max": 9000000,
+    "draw_calls_max": 1800,
+    "tex_pool_mb": 1400
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/MansionBlock.hda",
+    "parms": {
+      "floors": 3,
+      "bedrooms": 8,
+      "living_rooms": 3,
+      "garden_size_m": 30.0,
+      "pool": true,
+      "garage": true,
+      "balconies": 4
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/MansionProps",
+    "density": 0.25,
+    "slope_mask": [0, 20],
+    "height_mask": [0, 1500]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Furniture_Luxury_01",
+      "density": 0.18,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Chandelier_01",
+      "density": 0.04,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Art_Frame_01",
+      "density": 0.12,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Plant_Decorative_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Fountain_01",
+      "density": 0.02,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Mansion_Master",
+    "params": {
+      "HueShift": 0.05,
+      "Roughness": 0.4,
+      "Emissive": 0.7
+    }
+  },
+  "substance": {
+    "graph": "Materials/MansionMaster.sbsar",
+    "res": 4096,
+    "params": {
+      "luxury": 0.95,
+      "elegance": 0.9
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "housing": true,
+    "guild_headquarters": true,
+    "event_hosting": true,
+    "max_occupancy": 100
+  }
+}

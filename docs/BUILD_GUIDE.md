@@ -1228,6 +1228,86 @@ The result is a self-assembling machine: simple rules for individual gears (comp
 
 ---
 
+## 5.1 Community Spaces and Creative Building
+
+Bioworld features a comprehensive set of community spaces and creative building tools that allow players to collaboratively develop the ecosystem from scratch. None of these structures exist at the beginning—creative players use the tools and collaborate to build and evolve the world.
+
+### Community Space Presets
+
+The following environment presets are available for player-driven development:
+
+| Preset | Purpose | Max Occupancy | Key Features |
+|--------|---------|---------------|--------------|
+| `Env_School_A` | Educational facility | 100 | Classrooms, labs, study areas, teaching enabled |
+| `Env_Lounge_A` | Social gathering | 50 | Seating clusters, bar area, ambient music |
+| `Env_Auditorium_A` | Presentations & events | 750 | Stage, seating, streaming enabled |
+| `Env_TradingCenter_A` | Commerce hub | 200 | Market stalls, auction area, trading terminals |
+| `Env_InfoZone_A` | Information center | 80 | Terminals, archives, hologram displays |
+| `Env_LearningLabKids_A` | Youth education | 40 | Interactive stations, tutorials, parental controls |
+| `Env_SportsLab_A` | Athletics | 300 | Courts, training rooms, equipment |
+| `Env_SciFiLab_A` | Experimental research | 60 | Research pods, hologram chambers, quantum core |
+| `Env_ModLab_A` | Content creation | 50 | Workstations, 3D printers, asset upload |
+| `Env_AutoShop_A` | Vehicle workshop | 30 | Service bays, lifts, paint booth |
+| `Env_TattooParlor_A` | Character customization | 20 | Artist stations, design boards |
+| `Env_FoodSeller_A` | Food service | 60 | Dining, counter, buff station |
+| `Env_MedicStation_A` | Medical facility | 40 | Treatment beds, pharmacy, wilderness compatible |
+| `Env_Mansion_A` | Luxury housing | 100 | Multi-floor, garden, pool, guild HQ |
+
+### Creative Building Elements
+
+Players can enhance their builds with:
+
+| Preset | Category | Description |
+|--------|----------|-------------|
+| `Foliage_RealPlants_A` | Plants | Growable, harvestable plants (tomatoes, roses, wheat, etc.) |
+| `Foliage_RealTrees_A` | Trees | Oak, pine, maple, fruit trees with seasonal variation |
+| `Build_RoadBuilder_A` | Infrastructure | Dirt paths to highways with spline-based placement |
+| `Build_LightFixtures_A` | Lighting | Street lamps, neon, campfires with Lumen support |
+| `Build_CreativeToolkit_A` | Master Toolkit | Combines all creative tools with progression system |
+
+### Creative Mode Configuration
+
+```cpp
+// Example: Enable creative building mode
+UCLASS()
+class UCreativeBuildingSubsystem : public UGameInstanceSubsystem
+{
+    GENERATED_BODY()
+    
+public:
+    // Place community space from preset
+    UFUNCTION(BlueprintCallable)
+    bool PlaceCommunitySpace(const FString& PresetID, FTransform Location);
+    
+    // Save player build as shareable blueprint
+    UFUNCTION(BlueprintCallable)
+    FString SaveBlueprint(const TArray<FPlacedAsset>& Assets, const FString& BlueprintName);
+    
+    // Load and place blueprint from code
+    UFUNCTION(BlueprintCallable)
+    bool LoadBlueprintFromCode(const FString& BlueprintCode, FTransform Location);
+};
+```
+
+### Ecosystem Development Philosophy
+
+The Bioworld creative system follows these principles:
+
+1. **Empty Start** — The world begins without structures. Players build everything.
+2. **Collaborative Development** — Multiple players can work together on projects.
+3. **Organic Growth** — Communities evolve based on player decisions.
+4. **Blueprint Sharing** — Successful builds can be shared via short codes.
+5. **Progression Unlocks** — More building options unlock through gameplay.
+
+### Build Checklist for Community Spaces
+
+- [ ] Import community space preset JSON files
+- [ ] Configure PCG graphs for each space type
+- [ ] Set up Houdini HDAs for procedural generation
+- [ ] Implement placement validation system
+- [ ] Create Blueprint sharing API endpoints
+- [ ] Test collaborative building with multiple players
+- [ ] Verify Lumen/Nanite performance with large builds
 ## 5.5 NPC and Crafting System Architecture
 
 ### NPC System Design
