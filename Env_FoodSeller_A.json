@@ -1,0 +1,83 @@
+{
+  "preset_id": "Env_FoodSeller_A",
+  "seed": 141516,
+  "category": "community_space",
+  "description": "Food service establishment for purchasing consumables, buffs, and social dining.",
+  "budgets": {
+    "tri_max": 4000000,
+    "draw_calls_max": 850,
+    "tex_pool_mb": 650
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/FoodSellerBlock.hda",
+    "parms": {
+      "dining_tables": 15,
+      "counter_length_m": 8.0,
+      "kitchen_size": "medium",
+      "outdoor_seating": true,
+      "vending_machines": 3
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/FoodProps",
+    "density": 0.38,
+    "slope_mask": [0, 10],
+    "height_mask": [0, 400]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Table_Dining_01",
+      "density": 0.2,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Chair_Dining_01",
+      "density": 0.3,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Counter_Food_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Menu_Board_01",
+      "density": 0.05,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Vending_Machine_01",
+      "density": 0.06,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_FoodSeller_Master",
+    "params": {
+      "HueShift": 0.08,
+      "Roughness": 0.6,
+      "Emissive": 0.75
+    }
+  },
+  "substance": {
+    "graph": "Materials/FoodSellerMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "appetizing": 0.85,
+      "cleanliness": 0.9
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "consumables_shop": true,
+    "buff_station": true,
+    "social_dining": true,
+    "max_occupancy": 60
+  }
+}

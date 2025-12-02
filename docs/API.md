@@ -363,6 +363,205 @@ All error responses follow this format:
 
 ---
 
+## Community Spaces (Creative Building)
+
+Community spaces allow players to collaboratively build and develop the ecosystem.
+
+### GET /api/community-spaces
+
+List all available community space presets.
+
+**Response**
+
+```json
+{
+    "spaces": [
+        {
+            "preset_id": "Env_School_A",
+            "category": "community_space",
+            "description": "Educational facility for player collaboration and learning",
+            "max_occupancy": 100,
+            "features": ["teaching_enabled", "collaborative"]
+        }
+    ]
+}
+```
+
+### GET /api/community-spaces/:preset_id
+
+Get details of a specific community space preset.
+
+**Response**
+
+```json
+{
+    "preset_id": "Env_School_A",
+    "category": "community_space",
+    "description": "Educational facility for player collaboration and learning",
+    "budgets": {
+        "tri_max": 6000000,
+        "draw_calls_max": 1200,
+        "tex_pool_mb": 900
+    },
+    "features": {
+        "player_buildable": true,
+        "collaborative": true,
+        "teaching_enabled": true,
+        "max_occupancy": 100
+    }
+}
+```
+
+### POST /api/community-spaces/place
+
+Place a community space in the world.
+
+**Request Body**
+
+```json
+{
+    "preset_id": "Env_School_A",
+    "player_id": "player-001",
+    "location": {
+        "x": 1000.0,
+        "y": 2000.0,
+        "z": 0.0
+    },
+    "rotation": 0.0
+}
+```
+
+**Response (201 Created)**
+
+```json
+{
+    "message": "Community space placed",
+    "placement_id": "place-abc123",
+    "preset_id": "Env_School_A",
+    "owner_id": "player-001"
+}
+```
+
+---
+
+## Blueprints (Build Sharing)
+
+Save and share player-created builds.
+
+### GET /api/blueprints
+
+List all public blueprints.
+
+**Response**
+
+```json
+{
+    "blueprints": [
+        {
+            "id": "bp-xyz789",
+            "code": "BW-a1b2c3d4e5f6",
+            "name": "Community Hub Alpha",
+            "creator_id": "player-001",
+            "category": "community_space",
+            "downloads": 150,
+            "created_at": "2025-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+### POST /api/blueprints
+
+Create and save a new blueprint.
+
+**Request Body**
+
+```json
+{
+    "name": "My Awesome Build",
+    "creator_id": "player-001",
+    "category": "community_space",
+    "build_data": {
+        "assets": [...],
+        "connections": [...]
+    },
+    "public": true
+}
+```
+
+**Response (201 Created)**
+
+```json
+{
+    "message": "Blueprint saved",
+    "id": "bp-xyz789",
+    "code": "BW-a1b2c3d4e5f6"
+}
+```
+
+### GET /api/blueprints/:code
+
+Get a blueprint by its share code.
+
+**Response**
+
+```json
+{
+    "id": "bp-xyz789",
+    "code": "BW-a1b2c3d4e5f6",
+    "name": "Community Hub Alpha",
+    "creator_id": "player-001",
+    "build_data": {...}
+}
+```
+
+---
+
+## Creative Building Elements
+
+### GET /api/building-elements
+
+List all creative building element presets (plants, trees, roads, lights).
+
+**Response**
+
+```json
+{
+    "elements": [
+        {
+            "preset_id": "Foliage_RealPlants_A",
+            "category": "creative_building",
+            "description": "Collection of real-world inspired plants",
+            "item_count": 8
+        },
+        {
+            "preset_id": "Foliage_RealTrees_A",
+            "category": "creative_building",
+            "description": "Collection of real-world inspired trees",
+            "item_count": 8
+        },
+        {
+            "preset_id": "Build_RoadBuilder_A",
+            "category": "creative_building",
+            "description": "Road construction toolkit",
+            "item_count": 8
+        },
+        {
+            "preset_id": "Build_LightFixtures_A",
+            "category": "creative_building",
+            "description": "Lighting toolkit",
+            "item_count": 10
+        }
+    ]
+}
+```
+
+### GET /api/building-elements/:preset_id
+
+Get details of a specific building element preset.
+
+---
+
 ## Rate Limiting
 
 Not implemented in development. Production deployments should implement 

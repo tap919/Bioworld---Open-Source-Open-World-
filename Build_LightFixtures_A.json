@@ -1,0 +1,142 @@
+{
+  "preset_id": "Build_LightFixtures_A",
+  "seed": 303132,
+  "category": "creative_building",
+  "description": "Lighting toolkit for players to illuminate buildings, streets, and outdoor spaces.",
+  "budgets": {
+    "tri_max": 1500000,
+    "draw_calls_max": 400,
+    "tex_pool_mb": 300
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": false
+  },
+  "light_types": [
+    {
+      "id": "light_streetlamp_01",
+      "mesh": "SM_Streetlamp_01",
+      "category": "outdoor",
+      "light_type": "point",
+      "intensity_lumens": 2000,
+      "color_kelvin": 4000,
+      "radius_m": 15.0,
+      "cost": 50
+    },
+    {
+      "id": "light_streetlamp_modern_01",
+      "mesh": "SM_Streetlamp_Modern_01",
+      "category": "outdoor",
+      "light_type": "spot",
+      "intensity_lumens": 3000,
+      "color_kelvin": 5000,
+      "radius_m": 20.0,
+      "cost": 75
+    },
+    {
+      "id": "light_lantern_01",
+      "mesh": "SM_Lantern_01",
+      "category": "decorative",
+      "light_type": "point",
+      "intensity_lumens": 500,
+      "color_kelvin": 2700,
+      "radius_m": 5.0,
+      "cost": 20
+    },
+    {
+      "id": "light_floodlight_01",
+      "mesh": "SM_Floodlight_01",
+      "category": "industrial",
+      "light_type": "spot",
+      "intensity_lumens": 10000,
+      "color_kelvin": 6500,
+      "radius_m": 40.0,
+      "cost": 150
+    },
+    {
+      "id": "light_ceiling_01",
+      "mesh": "SM_Light_Ceiling_01",
+      "category": "indoor",
+      "light_type": "point",
+      "intensity_lumens": 1200,
+      "color_kelvin": 4000,
+      "radius_m": 8.0,
+      "cost": 30
+    },
+    {
+      "id": "light_wall_sconce_01",
+      "mesh": "SM_Wall_Sconce_01",
+      "category": "indoor",
+      "light_type": "point",
+      "intensity_lumens": 600,
+      "color_kelvin": 3000,
+      "radius_m": 4.0,
+      "cost": 25
+    },
+    {
+      "id": "light_neon_01",
+      "mesh": "SM_Neon_Light_01",
+      "category": "decorative",
+      "light_type": "emissive",
+      "intensity_lumens": 800,
+      "color_kelvin": 0,
+      "custom_color_rgb": [255, 0, 128],
+      "radius_m": 6.0,
+      "cost": 40
+    },
+    {
+      "id": "light_campfire_01",
+      "mesh": "SM_Campfire_01",
+      "category": "outdoor",
+      "light_type": "point",
+      "intensity_lumens": 400,
+      "color_kelvin": 1800,
+      "radius_m": 8.0,
+      "flicker": true,
+      "cost": 10
+    },
+    {
+      "id": "light_torch_01",
+      "mesh": "SM_Torch_01",
+      "category": "outdoor",
+      "light_type": "point",
+      "intensity_lumens": 300,
+      "color_kelvin": 2000,
+      "radius_m": 6.0,
+      "flicker": true,
+      "cost": 8
+    },
+    {
+      "id": "light_string_01",
+      "mesh": "SM_String_Lights_01",
+      "category": "decorative",
+      "light_type": "point_array",
+      "intensity_lumens": 100,
+      "color_kelvin": 2700,
+      "radius_m": 3.0,
+      "cost": 35
+    }
+  ],
+  "controls": {
+    "day_night_toggle": true,
+    "dimmer_support": true,
+    "color_customization": true,
+    "group_controls": true
+  },
+  "materials": {
+    "master": "M_Light_Master",
+    "params": {
+      "EmissiveIntensity": 1.0,
+      "GlassOpacity": 0.3,
+      "MetalRoughness": 0.6
+    }
+  },
+  "features": {
+    "player_placeable": true,
+    "power_system_ready": true,
+    "day_night_responsive": true,
+    "customizable_color": true,
+    "lumen_compatible": true
+  }
+}

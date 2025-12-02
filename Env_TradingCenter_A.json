@@ -1,0 +1,82 @@
+{
+  "preset_id": "Env_TradingCenter_A",
+  "seed": 445566,
+  "category": "community_space",
+  "description": "Economic hub for player-to-player trading, marketplace stalls, and commerce activities.",
+  "budgets": {
+    "tri_max": 6500000,
+    "draw_calls_max": 1300,
+    "tex_pool_mb": 950
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/TradingCenterBlock.hda",
+    "parms": {
+      "stall_count": 40,
+      "main_hall_size_m": 50.0,
+      "auction_area": true,
+      "vault_room": true,
+      "info_kiosk_count": 6
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/TradingProps",
+    "density": 0.38,
+    "slope_mask": [0, 12],
+    "height_mask": [0, 600]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Market_Stall_01",
+      "density": 0.25,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Display_Case_01",
+      "density": 0.18,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Terminal_Trade_01",
+      "density": 0.12,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Crate_Goods_01",
+      "density": 0.2,
+      "align_to_normal": false
+    },
+    {
+      "mesh": "SM_Banner_Market_01",
+      "density": 0.1,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Trading_Master",
+    "params": {
+      "HueShift": 0.08,
+      "Roughness": 0.55,
+      "Emissive": 0.85
+    }
+  },
+  "substance": {
+    "graph": "Materials/TradingMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "commerce": 0.8,
+      "bustle": 0.7
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "marketplace_enabled": true,
+    "auction_enabled": true,
+    "max_occupancy": 200
+  }
+}

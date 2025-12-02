@@ -1,0 +1,84 @@
+{
+  "preset_id": "Env_LearningLabKids_A",
+  "seed": 667788,
+  "category": "community_space",
+  "description": "Interactive learning environment designed for younger players with hands-on experiments and tutorials.",
+  "budgets": {
+    "tri_max": 4500000,
+    "draw_calls_max": 950,
+    "tex_pool_mb": 750
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/KidsLabBlock.hda",
+    "parms": {
+      "activity_stations": 20,
+      "play_zones": 6,
+      "tutorial_screens": 12,
+      "safety_rails": true,
+      "colorful_theme": true
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/KidsLabProps",
+    "density": 0.35,
+    "slope_mask": [0, 8],
+    "height_mask": [0, 300]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Table_Kids_01",
+      "density": 0.2,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Chair_Kids_01",
+      "density": 0.25,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Experiment_Station_01",
+      "density": 0.15,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Interactive_Display_01",
+      "density": 0.1,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Toy_Science_01",
+      "density": 0.12,
+      "align_to_normal": false
+    }
+  ],
+  "materials": {
+    "master": "M_KidsLab_Master",
+    "params": {
+      "HueShift": 0.15,
+      "Roughness": 0.7,
+      "Emissive": 0.8,
+      "Saturation": 1.3
+    }
+  },
+  "substance": {
+    "graph": "Materials/KidsLabMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "playful": 0.9,
+      "safety": 0.95
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "tutorial_mode": true,
+    "age_appropriate": "7+",
+    "parental_controls": true,
+    "max_occupancy": 40
+  }
+}

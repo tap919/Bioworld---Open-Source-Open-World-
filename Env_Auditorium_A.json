@@ -1,0 +1,82 @@
+{
+  "preset_id": "Env_Auditorium_A",
+  "seed": 334455,
+  "category": "community_space",
+  "description": "Large presentation space for lectures, events, demonstrations, and community gatherings.",
+  "budgets": {
+    "tri_max": 7000000,
+    "draw_calls_max": 1400,
+    "tex_pool_mb": 1000
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/AuditoriumBlock.hda",
+    "parms": {
+      "seating_rows": 30,
+      "seats_per_row": 25,
+      "stage_depth_m": 12.0,
+      "balcony": true,
+      "orchestra_pit": false
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/AuditoriumProps",
+    "density": 0.25,
+    "slope_mask": [0, 35],
+    "height_mask": [0, 1500]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Seat_Auditorium_01",
+      "density": 0.45,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Podium_01",
+      "density": 0.02,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Projector_01",
+      "density": 0.03,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Stage_Light_01",
+      "density": 0.08,
+      "align_to_normal": false
+    },
+    {
+      "mesh": "SM_Curtain_01",
+      "density": 0.05,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_Auditorium_Master",
+    "params": {
+      "HueShift": -0.02,
+      "Roughness": 0.45,
+      "Emissive": 0.4
+    }
+  },
+  "substance": {
+    "graph": "Materials/AuditoriumMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "acoustic": 0.7,
+      "elegance": 0.6
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "presentation_mode": true,
+    "streaming_enabled": true,
+    "max_occupancy": 750
+  }
+}

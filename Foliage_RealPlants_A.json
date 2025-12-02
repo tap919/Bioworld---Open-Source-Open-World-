@@ -1,0 +1,108 @@
+{
+  "preset_id": "Foliage_RealPlants_A",
+  "seed": 212223,
+  "category": "creative_building",
+  "description": "Collection of real-world inspired plants for player-built gardens, farms, and landscaping.",
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "speedtree": {
+    "templates": [
+      "TomatoPlant.sta",
+      "RoseBush.sta",
+      "Fern.sta",
+      "Sunflower.sta",
+      "Lavender.sta"
+    ],
+    "count_per_type": 12
+  },
+  "pcg": {
+    "graph": "/PCG/RealPlants_Volume",
+    "density": 0.45,
+    "slope_mask": [0, 30],
+    "height_mask": [0, 800]
+  },
+  "plant_types": [
+    {
+      "id": "plant_tomato_01",
+      "mesh": "SM_Plant_Tomato_01",
+      "category": "edible",
+      "growth_time_hours": 4,
+      "yield": "tomato_fruit",
+      "water_needs": "medium"
+    },
+    {
+      "id": "plant_rose_01",
+      "mesh": "SM_Plant_Rose_01",
+      "category": "decorative",
+      "growth_time_hours": 6,
+      "yield": "rose_flower",
+      "water_needs": "medium"
+    },
+    {
+      "id": "plant_fern_01",
+      "mesh": "SM_Plant_Fern_01",
+      "category": "decorative",
+      "growth_time_hours": 2,
+      "yield": null,
+      "water_needs": "high"
+    },
+    {
+      "id": "plant_sunflower_01",
+      "mesh": "SM_Plant_Sunflower_01",
+      "category": "decorative",
+      "growth_time_hours": 5,
+      "yield": "sunflower_seeds",
+      "water_needs": "low"
+    },
+    {
+      "id": "plant_lavender_01",
+      "mesh": "SM_Plant_Lavender_01",
+      "category": "medicinal",
+      "growth_time_hours": 3,
+      "yield": "lavender_essence",
+      "water_needs": "low"
+    },
+    {
+      "id": "plant_wheat_01",
+      "mesh": "SM_Plant_Wheat_01",
+      "category": "edible",
+      "growth_time_hours": 3,
+      "yield": "wheat_grain",
+      "water_needs": "medium"
+    },
+    {
+      "id": "plant_corn_01",
+      "mesh": "SM_Plant_Corn_01",
+      "category": "edible",
+      "growth_time_hours": 5,
+      "yield": "corn_cob",
+      "water_needs": "medium"
+    },
+    {
+      "id": "plant_cactus_01",
+      "mesh": "SM_Plant_Cactus_01",
+      "category": "decorative",
+      "growth_time_hours": 8,
+      "yield": null,
+      "water_needs": "very_low"
+    }
+  ],
+  "materials": {
+    "master": "M_Plant_Master",
+    "params": {
+      "Subsurface": 0.5,
+      "WindIntensity": 0.4,
+      "HealthTint": 0.0
+    }
+  },
+  "features": {
+    "player_placeable": true,
+    "growable": true,
+    "harvestable": true,
+    "watering_system": true,
+    "seasonal_variation": true
+  }
+}

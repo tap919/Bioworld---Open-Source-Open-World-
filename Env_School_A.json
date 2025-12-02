@@ -1,0 +1,81 @@
+{
+  "preset_id": "Env_School_A",
+  "seed": 112233,
+  "category": "community_space",
+  "description": "Educational facility for player collaboration and learning. Classrooms, labs, and study areas.",
+  "budgets": {
+    "tri_max": 6000000,
+    "draw_calls_max": 1200,
+    "tex_pool_mb": 900
+  },
+  "ue": {
+    "use_nanite": true,
+    "use_lumen": true,
+    "use_rvt_blend": true
+  },
+  "houdini": {
+    "hda": "HDAs/SchoolBlock.hda",
+    "parms": {
+      "floors": 3,
+      "classrooms_per_floor": 8,
+      "hallway_width_m": 4.0,
+      "lab_ratio": 0.25,
+      "common_area_ratio": 0.15
+    }
+  },
+  "pcg": {
+    "graph": "/PCG/SchoolProps",
+    "density": 0.28,
+    "slope_mask": [0, 15],
+    "height_mask": [0, 800]
+  },
+  "pcg_scatter": [
+    {
+      "mesh": "SM_Desk_Student_01",
+      "density": 0.35,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Chair_Student_01",
+      "density": 0.35,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Whiteboard_01",
+      "density": 0.08,
+      "align_to_normal": true
+    },
+    {
+      "mesh": "SM_Bookshelf_01",
+      "density": 0.12,
+      "align_to_normal": false
+    },
+    {
+      "mesh": "SM_Locker_Row_01",
+      "density": 0.15,
+      "align_to_normal": true
+    }
+  ],
+  "materials": {
+    "master": "M_School_Master",
+    "params": {
+      "HueShift": 0.05,
+      "Roughness": 0.65,
+      "Emissive": 0.7
+    }
+  },
+  "substance": {
+    "graph": "Materials/SchoolMaster.sbsar",
+    "res": 2048,
+    "params": {
+      "wear": 0.15,
+      "grunge": 0.1
+    }
+  },
+  "features": {
+    "player_buildable": true,
+    "collaborative": true,
+    "teaching_enabled": true,
+    "max_occupancy": 100
+  }
+}

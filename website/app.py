@@ -138,6 +138,30 @@ def init_db():
             content_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        
+        CREATE TABLE IF NOT EXISTS community_space_placements (
+            id TEXT PRIMARY KEY,
+            preset_id TEXT NOT NULL,
+            owner_id TEXT NOT NULL,
+            location_x REAL NOT NULL,
+            location_y REAL NOT NULL,
+            location_z REAL DEFAULT 0.0,
+            rotation REAL DEFAULT 0.0,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS blueprints (
+            id TEXT PRIMARY KEY,
+            code TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            creator_id TEXT NOT NULL,
+            category TEXT,
+            build_data TEXT NOT NULL,
+            public INTEGER DEFAULT 1,
+            downloads INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     db.commit()
 
@@ -925,6 +949,360 @@ def enroll_course(course_id):
         'course_id': course_id,
         'title': course['title']
     })
+
+
+# ============================================================================
+# Community Spaces and Creative Building System
+# ============================================================================
+
+# Define available community space presets
+COMMUNITY_SPACE_PRESETS = {
+    'Env_School_A': {
+        'preset_id': 'Env_School_A',
+        'category': 'community_space',
+        'description': 'Educational facility for player collaboration and learning. Classrooms, labs, and study areas.',
+        'max_occupancy': 100,
+        'features': ['teaching_enabled', 'collaborative', 'player_buildable']
+    },
+    'Env_Lounge_A': {
+        'preset_id': 'Env_Lounge_A',
+        'category': 'community_space',
+        'description': 'Social gathering space for players to relax, network, and collaborate on projects.',
+        'max_occupancy': 50,
+        'features': ['social_hub', 'collaborative', 'player_buildable']
+    },
+    'Env_Auditorium_A': {
+        'preset_id': 'Env_Auditorium_A',
+        'category': 'community_space',
+        'description': 'Large presentation space for lectures, events, demonstrations, and community gatherings.',
+        'max_occupancy': 750,
+        'features': ['presentation_mode', 'streaming_enabled', 'collaborative']
+    },
+    'Env_TradingCenter_A': {
+        'preset_id': 'Env_TradingCenter_A',
+        'category': 'community_space',
+        'description': 'Economic hub for player-to-player trading, marketplace stalls, and commerce activities.',
+        'max_occupancy': 200,
+        'features': ['marketplace_enabled', 'auction_enabled', 'collaborative']
+    },
+    'Env_InfoZone_A': {
+        'preset_id': 'Env_InfoZone_A',
+        'category': 'community_space',
+        'description': 'Information and resource center with databases, archives, and research terminals.',
+        'max_occupancy': 80,
+        'features': ['database_access', 'research_bonus', 'collaborative']
+    },
+    'Env_LearningLabKids_A': {
+        'preset_id': 'Env_LearningLabKids_A',
+        'category': 'community_space',
+        'description': 'Interactive learning environment designed for younger players with hands-on experiments.',
+        'max_occupancy': 40,
+        'features': ['tutorial_mode', 'parental_controls', 'age_appropriate']
+    },
+    'Env_SportsLab_A': {
+        'preset_id': 'Env_SportsLab_A',
+        'category': 'community_space',
+        'description': 'Athletic facility for physical activities, competitions, and sports-based research.',
+        'max_occupancy': 300,
+        'features': ['competition_mode', 'fitness_tracking', 'collaborative']
+    },
+    'Env_SciFiLab_A': {
+        'preset_id': 'Env_SciFiLab_A',
+        'category': 'community_space',
+        'description': 'Futuristic science fiction themed laboratory for experimental research.',
+        'max_occupancy': 60,
+        'features': ['experimental_mode', 'creativity_bonus', 'collaborative']
+    },
+    'Env_ModLab_A': {
+        'preset_id': 'Env_ModLab_A',
+        'category': 'community_space',
+        'description': 'Modding and customization laboratory for creating and sharing custom content.',
+        'max_occupancy': 50,
+        'features': ['modding_tools', 'asset_upload', 'blueprint_sharing']
+    },
+    'Env_AutoShop_A': {
+        'preset_id': 'Env_AutoShop_A',
+        'category': 'community_space',
+        'description': 'Vehicle workshop for building, customizing, and repairing mechs and vehicles.',
+        'max_occupancy': 30,
+        'features': ['vehicle_crafting', 'customization_mode', 'collaborative']
+    },
+    'Env_TattooParlor_A': {
+        'preset_id': 'Env_TattooParlor_A',
+        'category': 'community_space',
+        'description': 'Character customization studio for cosmetic modifications and personal expression.',
+        'max_occupancy': 20,
+        'features': ['character_customization', 'cosmetic_shop', 'collaborative']
+    },
+    'Env_FoodSeller_A': {
+        'preset_id': 'Env_FoodSeller_A',
+        'category': 'community_space',
+        'description': 'Food service establishment for purchasing consumables, buffs, and social dining.',
+        'max_occupancy': 60,
+        'features': ['consumables_shop', 'buff_station', 'social_dining']
+    },
+    'Env_MedicStation_A': {
+        'preset_id': 'Env_MedicStation_A',
+        'category': 'community_space',
+        'description': 'Medical facility for healing, buffs, and emergency services.',
+        'max_occupancy': 40,
+        'features': ['healing_enabled', 'buff_station', 'wilderness_compatible']
+    },
+    'Env_Mansion_A': {
+        'preset_id': 'Env_Mansion_A',
+        'category': 'community_space',
+        'description': 'Large luxury residence for player housing, guild headquarters, or social events.',
+        'max_occupancy': 100,
+        'features': ['housing', 'guild_headquarters', 'event_hosting']
+    }
+}
+
+# Define available building elements
+BUILDING_ELEMENTS = {
+    'Foliage_RealPlants_A': {
+        'preset_id': 'Foliage_RealPlants_A',
+        'category': 'creative_building',
+        'description': 'Collection of real-world inspired plants for gardens, farms, and landscaping.',
+        'item_count': 8,
+        'features': ['player_placeable', 'growable', 'harvestable']
+    },
+    'Foliage_RealTrees_A': {
+        'preset_id': 'Foliage_RealTrees_A',
+        'category': 'creative_building',
+        'description': 'Collection of real-world inspired trees for forests, orchards, and landscaping.',
+        'item_count': 8,
+        'features': ['player_placeable', 'growable', 'seasonal_variation']
+    },
+    'Build_RoadBuilder_A': {
+        'preset_id': 'Build_RoadBuilder_A',
+        'category': 'creative_building',
+        'description': 'Road construction toolkit for paths, streets, highways, and infrastructure.',
+        'item_count': 8,
+        'features': ['player_placeable', 'spline_tool', 'terrain_conforming']
+    },
+    'Build_LightFixtures_A': {
+        'preset_id': 'Build_LightFixtures_A',
+        'category': 'creative_building',
+        'description': 'Lighting toolkit for buildings, streets, and outdoor spaces.',
+        'item_count': 10,
+        'features': ['player_placeable', 'day_night_responsive', 'customizable_color']
+    }
+}
+
+
+@app.route('/api/community-spaces', methods=['GET'])
+def get_community_spaces():
+    """Get all available community space presets."""
+    return jsonify({
+        'spaces': list(COMMUNITY_SPACE_PRESETS.values())
+    })
+
+
+@app.route('/api/community-spaces/<preset_id>', methods=['GET'])
+def get_community_space(preset_id):
+    """Get details of a specific community space preset."""
+    if preset_id not in COMMUNITY_SPACE_PRESETS:
+        return jsonify({'error': 'Community space preset not found'}), 404
+    
+    # Load full preset data from JSON file if available
+    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{preset_id}.json')
+    if os.path.exists(preset_file):
+        with open(preset_file, 'r') as f:
+            return jsonify(json.load(f))
+    
+    return jsonify(COMMUNITY_SPACE_PRESETS[preset_id])
+
+
+@app.route('/api/community-spaces/place', methods=['POST'])
+def place_community_space():
+    """Place a community space in the world."""
+    data = request.get_json()
+    
+    required = ['preset_id', 'player_id', 'location']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    if data['preset_id'] not in COMMUNITY_SPACE_PRESETS:
+        return jsonify({'error': 'Invalid preset_id'}), 400
+    
+    placement_id = f"place-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    location = data['location']
+    
+    db = get_db()
+    db.execute(
+        'INSERT INTO community_space_placements (id, preset_id, owner_id, location_x, location_y, location_z, rotation) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (
+            placement_id,
+            data['preset_id'],
+            data['player_id'],
+            location.get('x', 0.0),
+            location.get('y', 0.0),
+            location.get('z', 0.0),
+            data.get('rotation', 0.0)
+        )
+    )
+    db.commit()
+    
+    return jsonify({
+        'message': 'Community space placed',
+        'placement_id': placement_id,
+        'preset_id': data['preset_id'],
+        'owner_id': data['player_id']
+    }), 201
+
+
+@app.route('/api/community-spaces/placements', methods=['GET'])
+def get_community_space_placements():
+    """Get all placed community spaces."""
+    db = get_db()
+    placements = db.execute(
+        'SELECT id, preset_id, owner_id, location_x, location_y, location_z, rotation, status, created_at '
+        'FROM community_space_placements WHERE status = "active" ORDER BY created_at DESC'
+    ).fetchall()
+    
+    result = []
+    for p in placements:
+        result.append({
+            'id': p['id'],
+            'preset_id': p['preset_id'],
+            'owner_id': p['owner_id'],
+            'location': {
+                'x': p['location_x'],
+                'y': p['location_y'],
+                'z': p['location_z']
+            },
+            'rotation': p['rotation'],
+            'status': p['status'],
+            'created_at': p['created_at']
+        })
+    
+    return jsonify({'placements': result})
+
+
+# ============================================================================
+# Blueprint Sharing System
+# ============================================================================
+
+@app.route('/api/blueprints', methods=['GET'])
+def get_blueprints():
+    """Get all public blueprints."""
+    db = get_db()
+    blueprints = db.execute(
+        'SELECT id, code, name, creator_id, category, downloads, created_at '
+        'FROM blueprints WHERE public = 1 ORDER BY downloads DESC'
+    ).fetchall()
+    
+    result = []
+    for bp in blueprints:
+        result.append({
+            'id': bp['id'],
+            'code': bp['code'],
+            'name': bp['name'],
+            'creator_id': bp['creator_id'],
+            'category': bp['category'],
+            'downloads': bp['downloads'],
+            'created_at': bp['created_at']
+        })
+    
+    return jsonify({'blueprints': result})
+
+
+@app.route('/api/blueprints', methods=['POST'])
+def create_blueprint():
+    """Create and save a new blueprint."""
+    data = request.get_json()
+    
+    required = ['name', 'creator_id', 'build_data']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    # Generate blueprint ID and code
+    build_json = json.dumps(data['build_data'], sort_keys=True)
+    hash_obj = hashlib.sha256(build_json.encode())
+    blueprint_id = f"bp-{hash_obj.hexdigest()[:12]}"
+    blueprint_code = f"BW-{base64.urlsafe_b64encode(hash_obj.digest()[:9]).decode('utf-8')}"
+    
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO blueprints (id, code, name, creator_id, category, build_data, public) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                blueprint_id,
+                blueprint_code,
+                data['name'],
+                data['creator_id'],
+                data.get('category', 'general'),
+                build_json,
+                1 if data.get('public', True) else 0
+            )
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Blueprint saved',
+            'id': blueprint_id,
+            'code': blueprint_code
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Blueprint with this build data already exists'}), 409
+
+
+@app.route('/api/blueprints/<code>', methods=['GET'])
+def get_blueprint_by_code(code):
+    """Get a blueprint by its share code."""
+    db = get_db()
+    blueprint = db.execute(
+        'SELECT * FROM blueprints WHERE code = ? OR id = ?', (code, code)
+    ).fetchone()
+    
+    if not blueprint:
+        return jsonify({'error': 'Blueprint not found'}), 404
+    
+    # Increment download count
+    db.execute(
+        'UPDATE blueprints SET downloads = downloads + 1 WHERE id = ?',
+        (blueprint['id'],)
+    )
+    db.commit()
+    
+    return jsonify({
+        'id': blueprint['id'],
+        'code': blueprint['code'],
+        'name': blueprint['name'],
+        'creator_id': blueprint['creator_id'],
+        'category': blueprint['category'],
+        'build_data': json.loads(blueprint['build_data']),
+        'downloads': blueprint['downloads'] + 1,
+        'created_at': blueprint['created_at']
+    })
+
+
+# ============================================================================
+# Building Elements API
+# ============================================================================
+
+@app.route('/api/building-elements', methods=['GET'])
+def get_building_elements():
+    """Get all creative building element presets."""
+    return jsonify({
+        'elements': list(BUILDING_ELEMENTS.values())
+    })
+
+
+@app.route('/api/building-elements/<preset_id>', methods=['GET'])
+def get_building_element(preset_id):
+    """Get details of a specific building element preset."""
+    if preset_id not in BUILDING_ELEMENTS:
+        return jsonify({'error': 'Building element preset not found'}), 404
+    
+    # Load full preset data from JSON file if available
+    preset_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'{preset_id}.json')
+    if os.path.exists(preset_file):
+        with open(preset_file, 'r') as f:
+            return jsonify(json.load(f))
+    
+    return jsonify(BUILDING_ELEMENTS[preset_id])
 
 
 if __name__ == '__main__':
