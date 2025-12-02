@@ -162,7 +162,7 @@ Bioworld is designed to be **remixable and extensible**. Here's how you can pivo
 ### 1. Find an Issue
 
 - Browse open issues on the GitHub repository
-- Look for `good-first-issue`, `help-wanted` labels
+- Look for "good first issue", "help wanted" labels
 - Or propose a new feature
 
 ### 2. Fork and Branch
