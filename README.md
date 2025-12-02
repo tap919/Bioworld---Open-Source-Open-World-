@@ -79,8 +79,15 @@ See [docs/API.md](docs/API.md) for full documentation.
 - **AI Models**: AlphaFold-inspired, RF Diffusion-inspired (simulated)
 - **Economics**: Game Theory, RL Trading, API Marketplace
 
+## Contributing
+
+Want to help build Bioworld? Check out our **[Contributing Guide](CONTRIBUTING.md)** with a skills-based update sheet to find where your abilities apply. Whether you're a programmer, artist, designer, or writer—there's a place for you!
+
+We encourage creativity and welcome forks. Use Bioworld as a foundation to pivot into your own games.
+
 ## Documentation
 
+- [**Contributing Guide**](CONTRIBUTING.md) - Skills update sheet and how to contribute
 - [**Build Guide**](docs/BUILD_GUIDE.md) - Unreal Engine implementation guide with checklists
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [API Documentation](docs/API.md)

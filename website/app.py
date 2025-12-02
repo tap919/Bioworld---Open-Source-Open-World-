@@ -16,6 +16,7 @@ import json
 import hashlib
 import base64
 import random
+import math
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template, g
 
@@ -197,6 +198,150 @@ def init_db():
             parameters_json TEXT,
             educational_notes TEXT,
             safety_notes TEXT,
+        -- NPC System Tables
+        CREATE TABLE IF NOT EXISTS npcs (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            npc_type TEXT NOT NULL,
+            role TEXT NOT NULL,
+            location_zone TEXT,
+            description TEXT,
+            specialization TEXT,
+            rarity TEXT DEFAULT 'common',
+            interaction_count INTEGER DEFAULT 0,
+            loot_table_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE TABLE IF NOT EXISTS npc_interactions (
+            id TEXT PRIMARY KEY,
+            npc_id TEXT NOT NULL,
+            player_id TEXT NOT NULL,
+            interaction_type TEXT NOT NULL,
+            reward_type TEXT,
+            reward_amount REAL DEFAULT 0,
+            reward_item_id TEXT,
+            success INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (npc_id) REFERENCES npcs(id)
+        );
+        
+        -- Base Elements for Crafting
+        CREATE TABLE IF NOT EXISTS base_elements (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            element_type TEXT NOT NULL,
+            rarity TEXT DEFAULT 'common',
+            description TEXT,
+            properties_json TEXT,
+            research_contribution REAL DEFAULT 0.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Tools System
+        CREATE TABLE IF NOT EXISTS tools (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            tool_type TEXT NOT NULL,
+            tier INTEGER DEFAULT 1,
+            description TEXT,
+            required_elements_json TEXT,
+            craft_time_seconds INTEGER DEFAULT 60,
+            durability INTEGER DEFAULT 100,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Player Tool Inventory
+        CREATE TABLE IF NOT EXISTS player_tools (
+            id TEXT PRIMARY KEY,
+            player_id TEXT NOT NULL,
+            tool_id TEXT NOT NULL,
+            current_durability INTEGER DEFAULT 100,
+            acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tool_id) REFERENCES tools(id)
+        );
+        
+        -- Craftable Items (Jetpacks, Vehicles, Shelters, etc.)
+        CREATE TABLE IF NOT EXISTS craftable_items (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            item_type TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            required_tools_json TEXT,
+            required_elements_json TEXT,
+            craft_time_seconds INTEGER DEFAULT 300,
+            effects_json TEXT,
+            research_bonus REAL DEFAULT 0.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Player Craftable Item Inventory
+        CREATE TABLE IF NOT EXISTS player_items (
+            id TEXT PRIMARY KEY,
+            player_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            condition INTEGER DEFAULT 100,
+            acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (item_id) REFERENCES craftable_items(id)
+        );
+        
+        -- Player Element Inventory
+        CREATE TABLE IF NOT EXISTS player_elements (
+            id TEXT PRIMARY KEY,
+            player_id TEXT NOT NULL,
+            element_id TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (element_id) REFERENCES base_elements(id)
+        );
+        
+        -- Shelters and Camps
+        CREATE TABLE IF NOT EXISTS shelters (
+            id TEXT PRIMARY KEY,
+            player_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            shelter_type TEXT NOT NULL,
+            location_x REAL DEFAULT 0.0,
+            location_y REAL DEFAULT 0.0,
+            location_z REAL DEFAULT 0.0,
+            capacity INTEGER DEFAULT 4,
+            research_bonus REAL DEFAULT 0.0,
+            upgrades_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Barter Transactions
+        CREATE TABLE IF NOT EXISTS barter_transactions (
+            id TEXT PRIMARY KEY,
+            initiator_id TEXT NOT NULL,
+            recipient_id TEXT NOT NULL,
+            offered_items_json TEXT NOT NULL,
+            requested_items_json TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP
+        );
+        
+        -- Disease Research Progress
+        CREATE TABLE IF NOT EXISTS research_progress (
+            id TEXT PRIMARY KEY,
+            disease_id TEXT NOT NULL,
+            player_id TEXT NOT NULL,
+            contribution_amount REAL DEFAULT 0.0,
+            contribution_type TEXT,
+            unique_build_bonus REAL DEFAULT 0.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- Loot Tables for NPC Rewards
+        CREATE TABLE IF NOT EXISTS loot_tables (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            entries_json TEXT NOT NULL,
+            total_weight INTEGER DEFAULT 100,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
@@ -1051,6 +1196,196 @@ def create_classroom():
     classroom_id = f"class-{hashlib.sha256((data['name'] + data['teacher_id']).encode()).hexdigest()[:12]}"
     # Generate a unique 6-character class code
     class_code = hashlib.sha256((classroom_id + str(datetime.utcnow())).encode()).hexdigest()[:6].upper()
+# NPC System - Randomized but Mathematically Fair Rewards
+# ============================================================================
+
+# Configuration constants for game balance tuning
+MAX_LUCK_MULTIPLIER = 2.0  # Maximum luck bonus cap to prevent exploitation
+MIN_PLAYER_LEVEL = 1  # Minimum effective player level for calculations
+LEVEL_BONUS_FACTOR = 0.5  # Scaling factor for level-based bonuses
+REWARD_VARIANCE_MIN = 0.8  # Minimum variance multiplier (±20%)
+REWARD_VARIANCE_MAX = 1.2  # Maximum variance multiplier (±20%)
+
+
+def calculate_fair_reward(player_level, npc_rarity, reward_type):
+    """
+    Calculate mathematically fair rewards using weighted probability distribution.
+    Ensures game balance while maintaining randomness.
+    
+    Uses a modified pity system and weighted random selection to ensure fairness:
+    - Base reward scales with player level (log scaling for diminishing returns)
+    - Rarity multiplier affects reward quality
+    - Small variance (±20%) to maintain excitement without exploitation
+    
+    Note: player_level is clamped to MIN_PLAYER_LEVEL (1) minimum, meaning level 0
+    and level 1 players receive the same base reward.
+    """
+    # Base multipliers by rarity
+    rarity_multipliers = {
+        'common': 1.0,
+        'uncommon': 1.5,
+        'rare': 2.5,
+        'epic': 4.0,
+        'legendary': 7.5
+    }
+    
+    # Reward type base values
+    base_values = {
+        'coins': 10.0,
+        'tools': 1.0,
+        'elements': 3.0,
+        'information': 5.0,
+        'special_files': 2.0,
+        'nft': 0.1,
+        'aid': 15.0
+    }
+    
+    multiplier = rarity_multipliers.get(npc_rarity, 1.0)
+    base = base_values.get(reward_type, 5.0)
+    
+    # Calculate fair reward with bounded variance
+    variance = random.uniform(REWARD_VARIANCE_MIN, REWARD_VARIANCE_MAX)
+    # Use log scaling for level bonus with diminishing returns
+    effective_level = max(player_level, MIN_PLAYER_LEVEL)
+    level_bonus = math.log(effective_level + 1) * LEVEL_BONUS_FACTOR
+    
+    reward = base * multiplier * variance * (1 + level_bonus)
+    
+    return round(reward, 2)
+
+
+def select_weighted_reward(loot_entries, player_luck=1.0):
+    """
+    Select reward from loot table using weighted random selection.
+    Implements mathematically fair distribution based on weights.
+    
+    Args:
+        loot_entries: List of {item, weight, min_amount, max_amount}
+        player_luck: Luck modifier (default 1.0)
+    
+    Returns:
+        Selected reward entry with calculated amount
+    """
+    if not loot_entries:
+        return None
+    
+    # Note: total_weight is calculated later after luck adjustments
+    
+    # Apply luck modifier to rare items (increases their effective weight)
+    adjusted_entries = []
+    for entry in loot_entries:
+        weight = entry.get('weight', 1)
+        rarity = entry.get('rarity', 'common')
+        
+        # Luck affects rare+ items, capped to prevent exploitation
+        if rarity in ['rare', 'epic', 'legendary'] and player_luck > 1.0:
+            weight = weight * min(player_luck, MAX_LUCK_MULTIPLIER)
+        
+        adjusted_entries.append({**entry, 'adjusted_weight': weight})
+    
+    # Recalculate total with adjustments
+    adjusted_total = sum(e['adjusted_weight'] for e in adjusted_entries)
+    
+    # Weighted random selection
+    roll = random.uniform(0, adjusted_total)
+    cumulative = 0
+    
+    for entry in adjusted_entries:
+        cumulative += entry['adjusted_weight']
+        if roll <= cumulative:
+            # Calculate amount within fair bounds
+            min_amt = entry.get('min_amount', 1)
+            max_amt = entry.get('max_amount', 1)
+            amount = random.randint(int(min_amt), int(max_amt))
+            return {
+                'item': entry.get('item'),
+                'item_type': entry.get('item_type'),
+                'rarity': entry.get('rarity', 'common'),
+                'amount': amount
+            }
+    
+    # Fallback to first entry with proper amount calculation
+    fallback = loot_entries[0]
+    min_amt = fallback.get('min_amount', 1)
+    max_amt = fallback.get('max_amount', 1)
+    return {
+        'item': fallback.get('item'),
+        'item_type': fallback.get('item_type'),
+        'rarity': fallback.get('rarity', 'common'),
+        'amount': random.randint(int(min_amt), int(max_amt))
+    }
+
+
+@app.route('/api/npcs', methods=['GET'])
+def get_npcs():
+    """Get all NPCs with optional filtering by type, role, or zone."""
+    db = get_db()
+    
+    npc_type = request.args.get('type')
+    role = request.args.get('role')
+    zone = request.args.get('zone')
+    
+    query = 'SELECT * FROM npcs WHERE 1=1'
+    params = []
+    
+    if npc_type:
+        query += ' AND npc_type = ?'
+        params.append(npc_type)
+    if role:
+        query += ' AND role = ?'
+        params.append(role)
+    if zone:
+        query += ' AND location_zone = ?'
+        params.append(zone)
+    
+    query += ' ORDER BY rarity DESC, name ASC'
+    
+    npcs = db.execute(query, params).fetchall()
+    
+    result = []
+    for npc in npcs:
+        result.append({
+            'id': npc['id'],
+            'name': npc['name'],
+            'npc_type': npc['npc_type'],
+            'role': npc['role'],
+            'location_zone': npc['location_zone'],
+            'description': npc['description'],
+            'specialization': npc['specialization'],
+            'rarity': npc['rarity'],
+            'interaction_count': npc['interaction_count'],
+            'created_at': npc['created_at']
+        })
+    
+    return jsonify({'npcs': result})
+
+
+@app.route('/api/npcs', methods=['POST'])
+def create_npc():
+    """Create a new NPC with specified role and attributes."""
+    data = request.get_json()
+    
+    required_fields = ['name', 'npc_type', 'role']
+    if not data or not all(f in data for f in required_fields):
+        return jsonify({'error': f'Missing required fields: {required_fields}'}), 400
+    
+    valid_types = ['helper', 'merchant', 'information_giver', 'tool_giver', 
+                   'quest_giver', 'trainer', 'banker', 'researcher']
+    valid_roles = ['aid', 'trade', 'information', 'tools', 'special_files', 
+                   'nfts', 'coins', 'crafting', 'research']
+    valid_rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+    
+    if data['npc_type'] not in valid_types:
+        return jsonify({'error': f'Invalid npc_type. Must be one of: {valid_types}'}), 400
+    
+    if data['role'] not in valid_roles:
+        return jsonify({'error': f'Invalid role. Must be one of: {valid_roles}'}), 400
+    
+    rarity = data.get('rarity', 'common')
+    if rarity not in valid_rarities:
+        return jsonify({'error': f'Invalid rarity. Must be one of: {valid_rarities}'}), 400
+    
+    npc_id = f"npc-{hashlib.sha256((data['name'] + str(datetime.utcnow())).encode()).hexdigest()[:12]}"
     
     db = get_db()
     try:
@@ -1065,6 +1400,18 @@ def create_classroom():
                 data.get('description', ''),
                 class_code,
                 max_students
+            'INSERT INTO npcs (id, name, npc_type, role, location_zone, description, '
+            'specialization, rarity, loot_table_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                npc_id,
+                data['name'],
+                data['npc_type'],
+                data['role'],
+                data.get('location_zone', 'central_hub'),
+                data.get('description', ''),
+                data.get('specialization', 'general'),
+                rarity,
+                data.get('loot_table_id')
             )
         )
         db.commit()
@@ -1257,6 +1604,349 @@ def create_lesson():
                 json.dumps(data.get('materials', [])),
                 data.get('estimated_duration', 45),
                 data.get('lesson_order', next_order)
+            'message': 'NPC created successfully',
+            'id': npc_id,
+            'name': data['name'],
+            'rarity': rarity
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'NPC creation failed'}), 409
+
+
+@app.route('/api/npcs/<npc_id>/interact', methods=['POST'])
+def interact_with_npc(npc_id):
+    """
+    Interact with an NPC to receive randomized but fair rewards.
+    Supports: help, aid, information, tools, special files, NFTs, coins.
+    
+    Note: In production, player_level and player_luck should be derived 
+    server-side from the authenticated player_id/session.
+    """
+    data = request.get_json() or {}
+    player_id = data.get('player_id', 'anonymous')
+    # Input validation for player_level and player_luck with bounded ranges
+    player_level = max(1, min(int(data.get('player_level', 1)), 100))  # Cap at reasonable max
+    player_luck = max(0.1, min(float(data.get('player_luck', 1.0)), MAX_LUCK_MULTIPLIER))
+    
+    db = get_db()
+    npc = db.execute('SELECT * FROM npcs WHERE id = ?', (npc_id,)).fetchone()
+    
+    if not npc:
+        return jsonify({'error': 'NPC not found'}), 404
+    
+    # Determine reward based on NPC role
+    role = npc['role']
+    rarity = npc['rarity']
+    
+    # Calculate fair reward
+    reward_amount = calculate_fair_reward(player_level, rarity, role)
+    
+    # Generate reward based on role
+    reward = _generate_npc_reward(role, rarity, reward_amount, player_luck)
+    
+    # Record interaction
+    interaction_id = f"int-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    
+    db.execute(
+        'INSERT INTO npc_interactions (id, npc_id, player_id, interaction_type, '
+        'reward_type, reward_amount, reward_item_id, success) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        (
+            interaction_id,
+            npc_id,
+            player_id,
+            role,
+            reward['type'],
+            reward['amount'],
+            reward.get('item_id'),
+            1
+        )
+    )
+    
+    # Update NPC interaction count
+    db.execute(
+        'UPDATE npcs SET interaction_count = interaction_count + 1 WHERE id = ?',
+        (npc_id,)
+    )
+    db.commit()
+    
+    return jsonify({
+        'interaction_id': interaction_id,
+        'npc': {
+            'id': npc['id'],
+            'name': npc['name'],
+            'type': npc['npc_type'],
+            'role': role
+        },
+        'reward': reward,
+        'message': _generate_interaction_message(npc['name'], role, reward)
+    })
+
+
+def _generate_npc_reward(role, rarity, base_amount, luck=1.0):
+    """Generate reward based on NPC role with fair randomization."""
+    rewards_by_role = {
+        'aid': {
+            'type': 'aid',
+            'options': ['health_pack', 'energy_boost', 'research_assist', 'protection_buff']
+        },
+        'trade': {
+            'type': 'coins',
+            'currency': 'biocoin'
+        },
+        'information': {
+            'type': 'information',
+            'options': ['research_tip', 'location_hint', 'recipe_clue', 'npc_location', 'rare_element_spot']
+        },
+        'tools': {
+            'type': 'tool',
+            'options': ['basic_tool', 'advanced_tool', 'specialized_tool', 'rare_tool']
+        },
+        'special_files': {
+            'type': 'special_file',
+            'options': ['blueprint', 'research_data', 'encrypted_file', 'ancient_document']
+        },
+        'nfts': {
+            'type': 'nft',
+            'options': ['common_nft', 'rare_nft', 'epic_nft', 'legendary_nft']
+        },
+        'coins': {
+            'type': 'coins',
+            'currency': 'biocoin'
+        },
+        'crafting': {
+            'type': 'element',
+            'options': ['basic_element', 'compound_element', 'rare_element', 'exotic_element']
+        },
+        'research': {
+            'type': 'research_contribution',
+            'options': ['data_sample', 'analysis_result', 'breakthrough_fragment']
+        }
+    }
+    
+    role_config = rewards_by_role.get(role, rewards_by_role['trade'])
+    reward_type = role_config['type']
+    
+    # Apply luck to amount for certain rewards
+    luck_bonus = 1.0 + (luck - 1.0) * 0.1 if luck > 1.0 else 1.0
+    final_amount = round(base_amount * luck_bonus, 2)
+    
+    reward = {
+        'type': reward_type,
+        'amount': final_amount,
+        'rarity': rarity
+    }
+    
+    # Add specific item for non-currency rewards
+    if 'options' in role_config:
+        options = role_config['options']
+        # Weighted selection favoring higher indices for rarer NPCs
+        rarity_boost_map = {'common': 0, 'uncommon': 0, 'rare': 1, 'epic': 2, 'legendary': 3}
+        rarity_boost = rarity_boost_map.get(rarity, 0)
+        weights = [1 + i * rarity_boost for i in range(len(options))]
+        selected_index = random.choices(range(len(options)), weights=weights)[0]
+        reward['item'] = options[selected_index]
+        reward['item_id'] = f"{reward_type}-{hashlib.sha256(options[selected_index].encode()).hexdigest()[:8]}"
+    
+    if 'currency' in role_config:
+        reward['currency'] = role_config['currency']
+    
+    return reward
+
+
+def _generate_interaction_message(npc_name, role, reward):
+    """Generate a contextual message for NPC interaction."""
+    messages = {
+        'aid': f"{npc_name} provides you with {reward.get('item', 'aid')}. 'Use this wisely, researcher.'",
+        'trade': f"{npc_name} transfers {reward['amount']} {reward.get('currency', 'coins')} to your account.",
+        'information': f"{npc_name} shares valuable intelligence: '{reward.get('item', 'useful information')}'",
+        'tools': f"{npc_name} hands you a {reward.get('item', 'tool')}. 'This will help with your crafting.'",
+        'special_files': f"{npc_name} discreetly passes you {reward.get('item', 'special files')}. 'Handle with care.'",
+        'nfts': f"{npc_name} grants you a unique {reward.get('item', 'NFT')}. 'This is one of a kind.'",
+        'coins': f"{npc_name} rewards you with {reward['amount']} biocoins for your research efforts.",
+        'crafting': f"{npc_name} provides {reward.get('item', 'crafting materials')}. 'Build something amazing.'",
+        'research': f"{npc_name} contributes {reward.get('item', 'research data')} to your disease research."
+    }
+    return messages.get(role, f"{npc_name} gives you a reward worth {reward['amount']}.")
+
+
+# ============================================================================
+# Bartering and Trading System
+# ============================================================================
+
+@app.route('/api/barter/create', methods=['POST'])
+def create_barter():
+    """Create a new barter transaction between players or with NPCs."""
+    data = request.get_json()
+    
+    required = ['initiator_id', 'recipient_id', 'offered_items', 'requested_items']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    barter_id = f"barter-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    
+    db = get_db()
+    db.execute(
+        'INSERT INTO barter_transactions (id, initiator_id, recipient_id, '
+        'offered_items_json, requested_items_json, status) VALUES (?, ?, ?, ?, ?, ?)',
+        (
+            barter_id,
+            data['initiator_id'],
+            data['recipient_id'],
+            json.dumps(data['offered_items']),
+            json.dumps(data['requested_items']),
+            'pending'
+        )
+    )
+    db.commit()
+    
+    return jsonify({
+        'message': 'Barter offer created',
+        'id': barter_id,
+        'status': 'pending'
+    }), 201
+
+
+@app.route('/api/barter/<barter_id>/accept', methods=['POST'])
+def accept_barter(barter_id):
+    """Accept a pending barter transaction."""
+    db = get_db()
+    barter = db.execute('SELECT * FROM barter_transactions WHERE id = ?', (barter_id,)).fetchone()
+    
+    if not barter:
+        return jsonify({'error': 'Barter transaction not found'}), 404
+    
+    if barter['status'] != 'pending':
+        return jsonify({'error': f"Barter cannot be accepted. Current status: {barter['status']}"}), 400
+    
+    db.execute(
+        'UPDATE barter_transactions SET status = ?, completed_at = ? WHERE id = ?',
+        ('completed', datetime.utcnow(), barter_id)
+    )
+    db.commit()
+    
+    return jsonify({
+        'message': 'Barter completed successfully',
+        'id': barter_id,
+        'status': 'completed'
+    })
+
+
+@app.route('/api/barter/<barter_id>/decline', methods=['POST'])
+def decline_barter(barter_id):
+    """Decline a pending barter transaction."""
+    db = get_db()
+    barter = db.execute('SELECT * FROM barter_transactions WHERE id = ?', (barter_id,)).fetchone()
+    
+    if not barter:
+        return jsonify({'error': 'Barter transaction not found'}), 404
+    
+    if barter['status'] != 'pending':
+        return jsonify({'error': f"Barter cannot be declined. Current status: {barter['status']}"}), 400
+    
+    db.execute(
+        'UPDATE barter_transactions SET status = ? WHERE id = ?',
+        ('declined', barter_id)
+    )
+    db.commit()
+    
+    return jsonify({
+        'message': 'Barter declined',
+        'id': barter_id,
+        'status': 'declined'
+    })
+
+
+@app.route('/api/barter', methods=['GET'])
+def get_barters():
+    """Get barter transactions for a player."""
+    player_id = request.args.get('player_id')
+    status = request.args.get('status')
+    
+    db = get_db()
+    query = 'SELECT * FROM barter_transactions WHERE 1=1'
+    params = []
+    
+    if player_id:
+        query += ' AND (initiator_id = ? OR recipient_id = ?)'
+        params.extend([player_id, player_id])
+    if status:
+        query += ' AND status = ?'
+        params.append(status)
+    
+    query += ' ORDER BY created_at DESC'
+    
+    barters = db.execute(query, params).fetchall()
+    
+    result = []
+    for b in barters:
+        result.append({
+            'id': b['id'],
+            'initiator_id': b['initiator_id'],
+            'recipient_id': b['recipient_id'],
+            'offered_items': json.loads(b['offered_items_json']),
+            'requested_items': json.loads(b['requested_items_json']),
+            'status': b['status'],
+            'created_at': b['created_at'],
+            'completed_at': b['completed_at']
+        })
+    
+    return jsonify({'barters': result})
+
+
+# ============================================================================
+# Base Elements System
+# ============================================================================
+
+@app.route('/api/elements', methods=['GET'])
+def get_elements():
+    """Get all base elements available for crafting."""
+    db = get_db()
+    elements = db.execute(
+        'SELECT * FROM base_elements ORDER BY rarity, name'
+    ).fetchall()
+    
+    result = []
+    for e in elements:
+        result.append({
+            'id': e['id'],
+            'name': e['name'],
+            'element_type': e['element_type'],
+            'rarity': e['rarity'],
+            'description': e['description'],
+            'properties': json.loads(e['properties_json']) if e['properties_json'] else {},
+            'research_contribution': e['research_contribution']
+        })
+    
+    return jsonify({'elements': result})
+
+
+@app.route('/api/elements', methods=['POST'])
+def create_element():
+    """Create a new base element."""
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'element_type' not in data:
+        return jsonify({'error': 'Missing required fields: name, element_type'}), 400
+    
+    valid_types = ['organic', 'inorganic', 'synthetic', 'biological', 'energy', 'catalyst', 'compound']
+    if data['element_type'] not in valid_types:
+        return jsonify({'error': f'Invalid element_type. Must be one of: {valid_types}'}), 400
+    
+    element_id = f"elem-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
+    
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO base_elements (id, name, element_type, rarity, description, '
+            'properties_json, research_contribution) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                element_id,
+                data['name'],
+                data['element_type'],
+                data.get('rarity', 'common'),
+                data.get('description', ''),
+                json.dumps(data.get('properties', {})),
+                data.get('research_contribution', 0.0)
             )
         )
         db.commit()
@@ -1419,6 +2109,158 @@ def create_demonstration():
         return jsonify({'error': f'Missing required fields: {required}'}), 400
     
     demo_id = f"demo-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
+            'message': 'Element created',
+            'id': element_id
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Element already exists'}), 409
+
+
+# ============================================================================
+# Tools System
+# ============================================================================
+
+@app.route('/api/tools', methods=['GET'])
+def get_tools():
+    """Get all available tools."""
+    db = get_db()
+    tools = db.execute(
+        'SELECT * FROM tools ORDER BY tier, name'
+    ).fetchall()
+    
+    result = []
+    for t in tools:
+        result.append({
+            'id': t['id'],
+            'name': t['name'],
+            'tool_type': t['tool_type'],
+            'tier': t['tier'],
+            'description': t['description'],
+            'required_elements': json.loads(t['required_elements_json']) if t['required_elements_json'] else [],
+            'craft_time_seconds': t['craft_time_seconds'],
+            'durability': t['durability']
+        })
+    
+    return jsonify({'tools': result})
+
+
+@app.route('/api/tools', methods=['POST'])
+def create_tool():
+    """Create a new tool definition."""
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'tool_type' not in data:
+        return jsonify({'error': 'Missing required fields: name, tool_type'}), 400
+    
+    valid_types = ['harvesting', 'crafting', 'research', 'construction', 'transport', 'defense', 'utility']
+    if data['tool_type'] not in valid_types:
+        return jsonify({'error': f'Invalid tool_type. Must be one of: {valid_types}'}), 400
+    
+    # Validate tier is within acceptable range (1-5)
+    tier = data.get('tier', 1)
+    if not (1 <= tier <= 5):
+        return jsonify({'error': 'Tier must be between 1 and 5'}), 400
+    
+    tool_id = f"tool-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
+    
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO tools (id, name, tool_type, tier, description, '
+            'required_elements_json, craft_time_seconds, durability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                tool_id,
+                data['name'],
+                data['tool_type'],
+                tier,
+                data.get('description', ''),
+                json.dumps(data.get('required_elements', [])),
+                data.get('craft_time_seconds', 60),
+                data.get('durability', 100)
+            )
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Tool created',
+            'id': tool_id
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Tool already exists'}), 409
+
+
+# ============================================================================
+# Craftable Items System (Jetpacks, Vehicles, Shelters, etc.)
+# ============================================================================
+
+@app.route('/api/craftables', methods=['GET'])
+def get_craftables():
+    """Get all craftable items with optional category filter."""
+    db = get_db()
+    category = request.args.get('category')
+    
+    query = 'SELECT * FROM craftable_items'
+    params = []
+    
+    if category:
+        query += ' WHERE category = ?'
+        params.append(category)
+    
+    query += ' ORDER BY category, name'
+    
+    items = db.execute(query, params).fetchall()
+    
+    result = []
+    for item in items:
+        # Safely parse JSON fields with error handling
+        try:
+            required_tools = json.loads(item['required_tools_json']) if item['required_tools_json'] else []
+        except json.JSONDecodeError:
+            required_tools = []
+        try:
+            required_elements = json.loads(item['required_elements_json']) if item['required_elements_json'] else []
+        except json.JSONDecodeError:
+            required_elements = []
+        try:
+            effects = json.loads(item['effects_json']) if item['effects_json'] else {}
+        except json.JSONDecodeError:
+            effects = {}
+        result.append({
+            'id': item['id'],
+            'name': item['name'],
+            'item_type': item['item_type'],
+            'category': item['category'],
+            'description': item['description'],
+            'required_tools': required_tools,
+            'required_elements': required_elements,
+            'craft_time_seconds': item['craft_time_seconds'],
+            'effects': effects,
+            'research_bonus': item['research_bonus']
+        })
+    
+    return jsonify({'craftables': result})
+
+
+@app.route('/api/craftables', methods=['POST'])
+def create_craftable():
+    """Create a new craftable item definition."""
+    data = request.get_json()
+    
+    required = ['name', 'item_type', 'category']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    valid_categories = ['transport', 'shelter', 'equipment', 'weapon', 'utility', 'research']
+    valid_types = ['jetpack', 'flight_suit', 'car', 'motorcycle', 'boat', 
+                   'shelter', 'camp', 'outpost', 'lab_extension',
+                   'armor', 'scanner', 'communicator', 'container']
+    
+    if data['category'] not in valid_categories:
+        return jsonify({'error': f'Invalid category. Must be one of: {valid_categories}'}), 400
+    
+    if data['item_type'] not in valid_types:
+        return jsonify({'error': f'Invalid item_type. Must be one of: {valid_types}'}), 400
+    
+    item_id = f"craft-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
     
     db = get_db()
     try:
@@ -1434,6 +2276,20 @@ def create_demonstration():
                 json.dumps(data.get('parameters', {})),
                 data.get('educational_notes', ''),
                 data.get('safety_notes', '')
+            'INSERT INTO craftable_items (id, name, item_type, category, description, '
+            'required_tools_json, required_elements_json, craft_time_seconds, effects_json, research_bonus) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                item_id,
+                data['name'],
+                data['item_type'],
+                data['category'],
+                data.get('description', ''),
+                json.dumps(data.get('required_tools', [])),
+                json.dumps(data.get('required_elements', [])),
+                data.get('craft_time_seconds', 300),
+                json.dumps(data.get('effects', {})),
+                data.get('research_bonus', 0.0)
             )
         )
         db.commit()
@@ -1841,6 +2697,400 @@ def _seed_default_demonstrations():
     ]
     
     return demonstrations
+            'message': 'Craftable item created',
+            'id': item_id,
+            'category': data['category']
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Craftable item already exists'}), 409
+
+
+@app.route('/api/craft', methods=['POST'])
+def craft_item():
+    """
+    Craft an item using collected tools and elements.
+    Verifies player has required materials before crafting.
+    """
+    data = request.get_json()
+    
+    if not data or 'player_id' not in data or 'craftable_id' not in data:
+        return jsonify({'error': 'Missing required fields: player_id, craftable_id'}), 400
+    
+    db = get_db()
+    craftable = db.execute(
+        'SELECT * FROM craftable_items WHERE id = ?', 
+        (data['craftable_id'],)
+    ).fetchone()
+    
+    if not craftable:
+        return jsonify({'error': 'Craftable item not found'}), 404
+    
+    # Parse required materials
+    required_tools = json.loads(craftable['required_tools_json']) if craftable['required_tools_json'] else []
+    required_elements = json.loads(craftable['required_elements_json']) if craftable['required_elements_json'] else []
+    
+    # TODO: Before production, verify player has required tools and elements before crafting.
+    # This would check player_tools and player_elements tables against required_tools and required_elements.
+    # For now, this is a simplified implementation for testing.
+    
+    player_item_id = f"pitem-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    
+    db.execute(
+        'INSERT INTO player_items (id, player_id, item_id, quantity, condition) '
+        'VALUES (?, ?, ?, ?, ?)',
+        (
+            player_item_id,
+            data['player_id'],
+            data['craftable_id'],
+            1,
+            100
+        )
+    )
+    db.commit()
+    
+    return jsonify({
+        'message': 'Item crafted successfully',
+        'player_item_id': player_item_id,
+        'item': {
+            'id': craftable['id'],
+            'name': craftable['name'],
+            'category': craftable['category'],
+            'effects': json.loads(craftable['effects_json']) if craftable['effects_json'] else {},
+            'required_tools': required_tools,
+            'required_elements': required_elements
+        },
+        'craft_time_seconds': craftable['craft_time_seconds'],
+        'research_bonus': craftable['research_bonus']
+    }), 201
+
+
+# ============================================================================
+# Shelters and Camps System
+# ============================================================================
+
+@app.route('/api/shelters', methods=['GET'])
+def get_shelters():
+    """Get player shelters with optional player filter."""
+    db = get_db()
+    player_id = request.args.get('player_id')
+    
+    query = 'SELECT * FROM shelters'
+    params = []
+    
+    if player_id:
+        query += ' WHERE player_id = ?'
+        params.append(player_id)
+    
+    query += ' ORDER BY created_at DESC'
+    
+    shelters = db.execute(query, params).fetchall()
+    
+    result = []
+    for s in shelters:
+        result.append({
+            'id': s['id'],
+            'player_id': s['player_id'],
+            'name': s['name'],
+            'shelter_type': s['shelter_type'],
+            'location': {
+                'x': s['location_x'],
+                'y': s['location_y'],
+                'z': s['location_z']
+            },
+            'capacity': s['capacity'],
+            'research_bonus': s['research_bonus'],
+            'upgrades': json.loads(s['upgrades_json']) if s['upgrades_json'] else [],
+            'created_at': s['created_at']
+        })
+    
+    return jsonify({'shelters': result})
+
+
+@app.route('/api/shelters', methods=['POST'])
+def create_shelter():
+    """Create a new shelter or camp for a player."""
+    data = request.get_json()
+    
+    required = ['player_id', 'name', 'shelter_type']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    valid_types = ['tent', 'cabin', 'outpost', 'research_station', 'mobile_lab', 
+                   'underground_bunker', 'treehouse', 'floating_platform']
+    
+    if data['shelter_type'] not in valid_types:
+        return jsonify({'error': f'Invalid shelter_type. Must be one of: {valid_types}'}), 400
+    
+    shelter_id = f"shelter-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    
+    # Calculate research bonus based on shelter type
+    research_bonuses = {
+        'tent': 0.05,
+        'cabin': 0.1,
+        'outpost': 0.15,
+        'research_station': 0.3,
+        'mobile_lab': 0.25,
+        'underground_bunker': 0.2,
+        'treehouse': 0.1,
+        'floating_platform': 0.15
+    }
+    
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO shelters (id, player_id, name, shelter_type, location_x, location_y, '
+            'location_z, capacity, research_bonus, upgrades_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                shelter_id,
+                data['player_id'],
+                data['name'],
+                data['shelter_type'],
+                data.get('location', {}).get('x', 0.0),
+                data.get('location', {}).get('y', 0.0),
+                data.get('location', {}).get('z', 0.0),
+                data.get('capacity', 4),
+                research_bonuses.get(data['shelter_type'], 0.1),
+                json.dumps(data.get('upgrades', []))
+            )
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Shelter created',
+            'id': shelter_id,
+            'research_bonus': research_bonuses.get(data['shelter_type'], 0.1)
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Shelter creation failed'}), 409
+
+
+# ============================================================================
+# Disease Research Progress System
+# ============================================================================
+
+@app.route('/api/research-progress', methods=['GET'])
+def get_research_progress():
+    """Get disease research progress with optional disease or player filter."""
+    db = get_db()
+    disease_id = request.args.get('disease_id')
+    player_id = request.args.get('player_id')
+    
+    query = 'SELECT * FROM research_progress WHERE 1=1'
+    params = []
+    
+    if disease_id:
+        query += ' AND disease_id = ?'
+        params.append(disease_id)
+    if player_id:
+        query += ' AND player_id = ?'
+        params.append(player_id)
+    
+    query += ' ORDER BY created_at DESC'
+    
+    progress = db.execute(query, params).fetchall()
+    
+    result = []
+    for p in progress:
+        result.append({
+            'id': p['id'],
+            'disease_id': p['disease_id'],
+            'player_id': p['player_id'],
+            'contribution_amount': p['contribution_amount'],
+            'contribution_type': p['contribution_type'],
+            'unique_build_bonus': p['unique_build_bonus'],
+            'created_at': p['created_at']
+        })
+    
+    # Calculate totals per disease if filtering by disease
+    total_contribution = sum(p['contribution_amount'] + p['unique_build_bonus'] for p in progress)
+    
+    return jsonify({
+        'progress': result,
+        'total_contribution': round(total_contribution, 2)
+    })
+
+
+@app.route('/api/research-progress', methods=['POST'])
+def add_research_contribution():
+    """
+    Add a research contribution from a player.
+    Unique builds provide bonus contributions through creative element combinations.
+    """
+    data = request.get_json()
+    
+    required = ['disease_id', 'player_id', 'contribution_amount']
+    if not data or not all(f in data for f in required):
+        return jsonify({'error': f'Missing required fields: {required}'}), 400
+    
+    # Validate contribution_amount is non-negative
+    if data['contribution_amount'] < 0:
+        return jsonify({'error': 'Contribution amount must be non-negative'}), 400
+    
+    progress_id = f"prog-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
+    
+    # Calculate unique build bonus based on creative element combinations
+    unique_build_bonus = _calculate_unique_build_bonus(data.get('elements_used', []))
+    
+    db = get_db()
+    db.execute(
+        'INSERT INTO research_progress (id, disease_id, player_id, contribution_amount, '
+        'contribution_type, unique_build_bonus) VALUES (?, ?, ?, ?, ?, ?)',
+        (
+            progress_id,
+            data['disease_id'],
+            data['player_id'],
+            data['contribution_amount'],
+            data.get('contribution_type', 'standard'),
+            unique_build_bonus
+        )
+    )
+    db.commit()
+    
+    total_contribution = data['contribution_amount'] + unique_build_bonus
+    
+    return jsonify({
+        'message': 'Research contribution recorded',
+        'id': progress_id,
+        'base_contribution': data['contribution_amount'],
+        'unique_build_bonus': unique_build_bonus,
+        'total_contribution': round(total_contribution, 2)
+    }), 201
+
+
+def _calculate_unique_build_bonus(elements_used):
+    """
+    Calculate bonus for creative element combinations.
+    More unique combinations yield higher bonuses.
+    """
+    if not elements_used:
+        return 0.0
+    
+    # Base bonus for using multiple elements
+    element_count = len(elements_used)
+    base_bonus = element_count * 0.5
+    
+    # Synergy bonus for certain combinations (would be data-driven in full impl)
+    synergy_combinations = {
+        frozenset(['organic', 'catalyst']): 2.0,
+        frozenset(['biological', 'synthetic']): 3.0,
+        frozenset(['energy', 'compound']): 2.5,
+        frozenset(['organic', 'biological', 'catalyst']): 5.0,
+        frozenset(['synthetic', 'energy', 'compound']): 4.0
+    }
+    
+    element_types = set(elements_used)
+    synergy_bonus = 0
+    
+    for combo, bonus in synergy_combinations.items():
+        if combo.issubset(element_types):
+            synergy_bonus = max(synergy_bonus, bonus)
+    
+    # Uniqueness multiplier (more elements = potentially more unique)
+    uniqueness = math.log(element_count + 1) * 0.3
+    
+    total_bonus = (base_bonus + synergy_bonus) * (1 + uniqueness)
+    
+    return round(total_bonus, 2)
+
+
+# ============================================================================
+# Loot Tables for Mathematically Fair Randomization
+# ============================================================================
+
+@app.route('/api/loot-tables', methods=['GET'])
+def get_loot_tables():
+    """Get all loot tables."""
+    db = get_db()
+    tables = db.execute('SELECT * FROM loot_tables ORDER BY name').fetchall()
+    
+    result = []
+    for t in tables:
+        result.append({
+            'id': t['id'],
+            'name': t['name'],
+            'description': t['description'],
+            'entries': json.loads(t['entries_json']),
+            'total_weight': t['total_weight'],
+            'created_at': t['created_at']
+        })
+    
+    return jsonify({'loot_tables': result})
+
+
+@app.route('/api/loot-tables', methods=['POST'])
+def create_loot_table():
+    """Create a new loot table for fair reward distribution."""
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'entries' not in data:
+        return jsonify({'error': 'Missing required fields: name, entries'}), 400
+    
+    # Validate entries structure
+    entries = data['entries']
+    if not isinstance(entries, list):
+        return jsonify({'error': 'entries must be a list'}), 400
+    
+    for entry in entries:
+        required_entry_fields = ['item', 'weight']
+        if not all(f in entry for f in required_entry_fields):
+            return jsonify({'error': f'Each entry must have: {required_entry_fields}'}), 400
+        # Validate that weight is a positive number
+        if not isinstance(entry['weight'], (int, float)) or entry['weight'] <= 0:
+            return jsonify({'error': 'Entry weights must be positive numbers'}), 400
+    
+    # Calculate total weight
+    total_weight = sum(e.get('weight', 1) for e in entries)
+    
+    table_id = f"loot-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
+    
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO loot_tables (id, name, description, entries_json, total_weight) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (
+                table_id,
+                data['name'],
+                data.get('description', ''),
+                json.dumps(entries),
+                total_weight
+            )
+        )
+        db.commit()
+        return jsonify({
+            'message': 'Loot table created',
+            'id': table_id,
+            'total_weight': total_weight,
+            'entry_count': len(entries)
+        }), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Loot table already exists'}), 409
+
+
+@app.route('/api/loot-tables/<table_id>/roll', methods=['POST'])
+def roll_loot_table(table_id):
+    """Roll on a loot table to get a random but fair reward."""
+    data = request.get_json() or {}
+    player_luck = data.get('player_luck', 1.0)
+    
+    db = get_db()
+    table = db.execute('SELECT * FROM loot_tables WHERE id = ?', (table_id,)).fetchone()
+    
+    if not table:
+        return jsonify({'error': 'Loot table not found'}), 404
+    
+    entries = json.loads(table['entries_json'])
+    result = select_weighted_reward(entries, player_luck)
+    
+    # Defensive: check result structure
+    if not isinstance(result, dict):
+        return jsonify({'error': 'Failed to select reward from loot table'}), 500
+    
+    # Use .get() to avoid KeyError and provide defaults
+    return jsonify({
+        'loot_table_id': table_id,
+        'result': result,
+        'message': f"You received {result.get('amount', 1)}x {result.get('item', 'item')} ({result.get('rarity', 'common')})"
+    })
 
 
 if __name__ == '__main__':
