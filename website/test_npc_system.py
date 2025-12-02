@@ -11,12 +11,10 @@ Tests cover:
 - Loot tables
 """
 
-import json
-import math
 import os
 import tempfile
 import pytest
-from app import app, init_db, get_db, calculate_fair_reward, select_weighted_reward, _calculate_unique_build_bonus
+from app import app, init_db, calculate_fair_reward, select_weighted_reward, _calculate_unique_build_bonus
 
 
 @pytest.fixture
@@ -152,10 +150,7 @@ class TestFairRewardCalculation:
     
     def test_fair_reward_scales_with_level(self):
         """Higher levels should get higher rewards."""
-        low_level = calculate_fair_reward(1, 'common', 'coins')
-        high_level = calculate_fair_reward(10, 'common', 'coins')
-        # High level should generally be higher (accounting for variance)
-        # Run multiple times to verify trend
+        # Run multiple times to verify trend since there's variance
         low_sum = sum(calculate_fair_reward(1, 'common', 'coins') for _ in range(100))
         high_sum = sum(calculate_fair_reward(10, 'common', 'coins') for _ in range(100))
         assert high_sum > low_sum

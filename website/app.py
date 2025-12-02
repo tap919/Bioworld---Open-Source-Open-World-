@@ -1149,8 +1149,7 @@ def select_weighted_reward(loot_entries, player_luck=1.0):
     if not loot_entries:
         return None
     
-    # Calculate total weight
-    total_weight = sum(entry.get('weight', 1) for entry in loot_entries)
+    # Note: total_weight is calculated later after luck adjustments
     
     # Apply luck modifier to rare items (increases their effective weight)
     adjusted_entries = []
@@ -1177,7 +1176,7 @@ def select_weighted_reward(loot_entries, player_luck=1.0):
             # Calculate amount within fair bounds
             min_amt = entry.get('min_amount', 1)
             max_amt = entry.get('max_amount', 1)
-            amount = random.randint(min_amt, max_amt)
+            amount = random.randint(int(min_amt), int(max_amt))
             return {
                 'item': entry.get('item'),
                 'item_type': entry.get('item_type'),
@@ -1185,12 +1184,15 @@ def select_weighted_reward(loot_entries, player_luck=1.0):
                 'amount': amount
             }
     
-    # Fallback to first entry
+    # Fallback to first entry with proper amount calculation
+    fallback = loot_entries[0]
+    min_amt = fallback.get('min_amount', 1)
+    max_amt = fallback.get('max_amount', 1)
     return {
-        'item': loot_entries[0].get('item'),
-        'item_type': loot_entries[0].get('item_type'),
-        'rarity': 'common',
-        'amount': 1
+        'item': fallback.get('item'),
+        'item_type': fallback.get('item_type'),
+        'rarity': fallback.get('rarity', 'common'),
+        'amount': random.randint(int(min_amt), int(max_amt))
     }
 
 
@@ -1298,11 +1300,15 @@ def interact_with_npc(npc_id):
     """
     Interact with an NPC to receive randomized but fair rewards.
     Supports: help, aid, information, tools, special files, NFTs, coins.
+    
+    Note: In production, player_level and player_luck should be derived 
+    server-side from the authenticated player_id/session.
     """
     data = request.get_json() or {}
     player_id = data.get('player_id', 'anonymous')
-    player_level = data.get('player_level', 1)
-    player_luck = data.get('player_luck', 1.0)
+    # Input validation for player_level and player_luck with bounded ranges
+    player_level = max(1, min(int(data.get('player_level', 1)), 100))  # Cap at reasonable max
+    player_luck = max(0.1, min(float(data.get('player_luck', 1.0)), MAX_LUCK_MULTIPLIER))
     
     db = get_db()
     npc = db.execute('SELECT * FROM npcs WHERE id = ?', (npc_id,)).fetchone()
@@ -1415,10 +1421,11 @@ def _generate_npc_reward(role, rarity, base_amount, luck=1.0):
     # Add specific item for non-currency rewards
     if 'options' in role_config:
         options = role_config['options']
-        # Weight selection towards better items for higher rarity NPCs
-        rarity_index_boost = {'common': 0, 'uncommon': 0, 'rare': 1, 'epic': 2, 'legendary': 3}
-        boost = rarity_index_boost.get(rarity, 0)
-        selected_index = min(random.randint(0, len(options) - 1) + (random.randint(0, boost)), len(options) - 1)
+        # Weighted selection favoring higher indices for rarer NPCs
+        rarity_boost_map = {'common': 0, 'uncommon': 0, 'rare': 1, 'epic': 2, 'legendary': 3}
+        rarity_boost = rarity_boost_map.get(rarity, 0)
+        weights = [1 + i * rarity_boost for i in range(len(options))]
+        selected_index = random.choices(range(len(options)), weights=weights)[0]
         reward['item'] = options[selected_index]
         reward['item_id'] = f"{reward_type}-{hashlib.sha256(options[selected_index].encode()).hexdigest()[:8]}"
     
@@ -1673,6 +1680,11 @@ def create_tool():
     if data['tool_type'] not in valid_types:
         return jsonify({'error': f'Invalid tool_type. Must be one of: {valid_types}'}), 400
     
+    # Validate tier is within acceptable range (1-5)
+    tier = data.get('tier', 1)
+    if not (1 <= tier <= 5):
+        return jsonify({'error': 'Tier must be between 1 and 5'}), 400
+    
     tool_id = f"tool-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
     
     db = get_db()
@@ -1684,7 +1696,7 @@ def create_tool():
                 tool_id,
                 data['name'],
                 data['tool_type'],
-                data.get('tier', 1),
+                tier,
                 data.get('description', ''),
                 json.dumps(data.get('required_elements', [])),
                 data.get('craft_time_seconds', 60),
@@ -1723,16 +1735,29 @@ def get_craftables():
     
     result = []
     for item in items:
+        # Safely parse JSON fields with error handling
+        try:
+            required_tools = json.loads(item['required_tools_json']) if item['required_tools_json'] else []
+        except json.JSONDecodeError:
+            required_tools = []
+        try:
+            required_elements = json.loads(item['required_elements_json']) if item['required_elements_json'] else []
+        except json.JSONDecodeError:
+            required_elements = []
+        try:
+            effects = json.loads(item['effects_json']) if item['effects_json'] else {}
+        except json.JSONDecodeError:
+            effects = {}
         result.append({
             'id': item['id'],
             'name': item['name'],
             'item_type': item['item_type'],
             'category': item['category'],
             'description': item['description'],
-            'required_tools': json.loads(item['required_tools_json']) if item['required_tools_json'] else [],
-            'required_elements': json.loads(item['required_elements_json']) if item['required_elements_json'] else [],
+            'required_tools': required_tools,
+            'required_elements': required_elements,
             'craft_time_seconds': item['craft_time_seconds'],
-            'effects': json.loads(item['effects_json']) if item['effects_json'] else {},
+            'effects': effects,
             'research_bonus': item['research_bonus']
         })
     
@@ -1755,6 +1780,9 @@ def create_craftable():
     
     if data['category'] not in valid_categories:
         return jsonify({'error': f'Invalid category. Must be one of: {valid_categories}'}), 400
+    
+    if data['item_type'] not in valid_types:
+        return jsonify({'error': f'Invalid item_type. Must be one of: {valid_types}'}), 400
     
     item_id = f"craft-{hashlib.sha256(data['name'].encode()).hexdigest()[:12]}"
     
@@ -1807,11 +1835,14 @@ def craft_item():
     if not craftable:
         return jsonify({'error': 'Craftable item not found'}), 404
     
-    # Check required tools (simplified - would verify player inventory in full impl)
+    # Parse required materials
     required_tools = json.loads(craftable['required_tools_json']) if craftable['required_tools_json'] else []
     required_elements = json.loads(craftable['required_elements_json']) if craftable['required_elements_json'] else []
     
-    # For now, simulate crafting success (full impl would check player inventory)
+    # TODO: Before production, verify player has required tools and elements before crafting.
+    # This would check player_tools and player_elements tables against required_tools and required_elements.
+    # For now, this is a simplified implementation for testing.
+    
     player_item_id = f"pitem-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
     
     db.execute(
@@ -1834,7 +1865,9 @@ def craft_item():
             'id': craftable['id'],
             'name': craftable['name'],
             'category': craftable['category'],
-            'effects': json.loads(craftable['effects_json']) if craftable['effects_json'] else {}
+            'effects': json.loads(craftable['effects_json']) if craftable['effects_json'] else {},
+            'required_tools': required_tools,
+            'required_elements': required_elements
         },
         'craft_time_seconds': craftable['craft_time_seconds'],
         'research_bonus': craftable['research_bonus']
@@ -1998,6 +2031,10 @@ def add_research_contribution():
     if not data or not all(f in data for f in required):
         return jsonify({'error': f'Missing required fields: {required}'}), 400
     
+    # Validate contribution_amount is non-negative
+    if data['contribution_amount'] < 0:
+        return jsonify({'error': 'Contribution amount must be non-negative'}), 400
+    
     progress_id = f"prog-{hashlib.sha256(str(datetime.utcnow()).encode()).hexdigest()[:12]}"
     
     # Calculate unique build bonus based on creative element combinations
@@ -2106,6 +2143,9 @@ def create_loot_table():
         required_entry_fields = ['item', 'weight']
         if not all(f in entry for f in required_entry_fields):
             return jsonify({'error': f'Each entry must have: {required_entry_fields}'}), 400
+        # Validate that weight is a positive number
+        if not isinstance(entry['weight'], (int, float)) or entry['weight'] <= 0:
+            return jsonify({'error': 'Entry weights must be positive numbers'}), 400
     
     # Calculate total weight
     total_weight = sum(e.get('weight', 1) for e in entries)
@@ -2151,10 +2191,15 @@ def roll_loot_table(table_id):
     entries = json.loads(table['entries_json'])
     result = select_weighted_reward(entries, player_luck)
     
+    # Defensive: check result structure
+    if not isinstance(result, dict):
+        return jsonify({'error': 'Failed to select reward from loot table'}), 500
+    
+    # Use .get() to avoid KeyError and provide defaults
     return jsonify({
         'loot_table_id': table_id,
         'result': result,
-        'message': f"You received {result['amount']}x {result['item']} ({result['rarity']})"
+        'message': f"You received {result.get('amount', 1)}x {result.get('item', 'item')} ({result.get('rarity', 'common')})"
     })
 
 
