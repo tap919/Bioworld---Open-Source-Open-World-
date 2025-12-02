@@ -3174,14 +3174,12 @@ def craft_item():
     db.commit()
     
     return jsonify({
-        'id': blueprint['id'],
-        'code': blueprint['code'],
-        'name': blueprint['name'],
-        'creator_id': blueprint['creator_id'],
-        'category': blueprint['category'],
-        'build_data': json.loads(blueprint['build_data']),
-        'downloads': blueprint['downloads'] + 1,
-        'created_at': blueprint['created_at']
+        'player_item_id': player_item_id,
+        'player_id': data['player_id'],
+        'item_id': data['craftable_id'],
+        'quantity': 1,
+        'condition': 100,
+        'status': 'crafted'
     })
 
 
