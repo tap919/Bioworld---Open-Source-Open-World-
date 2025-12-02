@@ -1618,11 +1618,19 @@ def _simulate_particle_motion(params):
     particle_count = params.get('particle_count', 50)
     temperature = params.get('temperature', 300)
     
+    # Calculate average velocity using kinetic theory of gases:
+    # v_avg = sqrt(3 * k_B * T / m)
+    # where k_B = 1.38e-23 J/K (Boltzmann constant)
+    # and m = 1.67e-27 kg (approximate proton mass, used for hydrogen gas)
+    boltzmann_constant = 1.38e-23  # J/K
+    hydrogen_mass = 1.67e-27  # kg (proton mass approximation)
+    average_velocity = (3 * boltzmann_constant * temperature / hydrogen_mass) ** 0.5
+    
     return {
         'type': 'particle_motion',
         'particle_count': particle_count,
         'temperature_k': temperature,
-        'average_velocity': (3 * 1.38e-23 * temperature / 1.67e-27) ** 0.5,
+        'average_velocity': average_velocity,
         'particles': [{'id': i, 'x': random.random(), 'y': random.random(), 
                        'vx': random.gauss(0, 1), 'vy': random.gauss(0, 1)} 
                       for i in range(min(particle_count, 100))]

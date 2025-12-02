@@ -1330,8 +1330,9 @@ a:hover {
 }
 
 .atom-H {
-    background-color: #FFFFFF;
+    background-color: #E8E8E8;
     color: #333;
+    border: 2px solid #888;
 }
 
 .atom-C {

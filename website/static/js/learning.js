@@ -495,18 +495,18 @@ function gatherCustomParameters() {
     if (fuelEl) params.fuel = fuelEl.value;
 
     const tempEl = document.getElementById('param-temperature');
-    if (tempEl) params.initial_temperature = parseInt(tempEl.value);
+    if (tempEl) params.initial_temperature = parseFloat(tempEl.value);
 
     // Molecular params
     const moleculeEl = document.getElementById('param-molecule');
     if (moleculeEl) params.molecule = moleculeEl.value;
 
-    // Particle params
+    // Particle params - particle count should be integer, temperature can be decimal
     const particleEl = document.getElementById('param-particle-count');
     if (particleEl) params.particle_count = parseInt(particleEl.value);
 
     const tempKEl = document.getElementById('param-temp-k');
-    if (tempKEl) params.temperature = parseInt(tempKEl.value);
+    if (tempKEl) params.temperature = parseFloat(tempKEl.value);
 
     // Cell division params
     const divisionEl = document.getElementById('param-division');
