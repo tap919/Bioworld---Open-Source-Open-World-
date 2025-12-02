@@ -1418,7 +1418,7 @@ def _generate_npc_reward(role, rarity, base_amount, luck=1.0):
 def _generate_interaction_message(npc_name, role, reward):
     """Generate a contextual message for NPC interaction."""
     messages = {
-        'aid': f"{npc_name} provides you with {reward['item']}. 'Use this wisely, researcher.'",
+        'aid': f"{npc_name} provides you with {reward.get('item', 'aid')}. 'Use this wisely, researcher.'",
         'trade': f"{npc_name} transfers {reward['amount']} {reward.get('currency', 'coins')} to your account.",
         'information': f"{npc_name} shares valuable intelligence: '{reward.get('item', 'useful information')}'",
         'tools': f"{npc_name} hands you a {reward.get('item', 'tool')}. 'This will help with your crafting.'",
